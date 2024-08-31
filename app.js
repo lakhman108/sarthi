@@ -1,13 +1,14 @@
 // app.js
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 // Connect to MongoDB
-const uri = 'mongodb://localhost:27017/videoplayer';
+const uri = process.env.MONGODB_URI;
 mongoose.connect(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -23,7 +24,7 @@ db.once('open', function() {
 app.use(bodyParser.json());
 
 // Routes
-const userRoutes = require('./routes/user');
+const userRoutes = require('./Backend/routes/user');
 // const courseRoutes = require('./routes/course');
 // const lectureRoutes = require('./routes/lecture');
 // const enrollmentRoutes = require('./routes/enrollment');
@@ -32,13 +33,14 @@ app.use('/api/users', userRoutes);
 // app.use('/api/courses', courseRoutes);
 // app.use('/api/lectures', lectureRoutes);
 // app.use('/api/enrollments', enrollmentRoutes);
-app.get("/",(req,res)=>{
 
-const some={
-    "keys":"this is something that i am learning"
-}
-res.send(some);
-})
+app.get("/", (req, res) => {
+  const some = {
+    "keys": "this is something that i am learning"
+  };
+  res.send(some);
+});
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);

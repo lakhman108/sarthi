@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const User = require('./user');
+const User = require('../models/usermodel.js');
 
 // Create User
 router.post('/', async (req, res) => {
@@ -9,6 +9,7 @@ router.post('/', async (req, res) => {
     await user.save();
     res.status(201).json(user);
   } catch (error) {
+    console.log(User);
     res.status(400).json({ error: error.message });
   }
 });
