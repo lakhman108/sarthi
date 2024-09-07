@@ -23,7 +23,7 @@ yarn.lock
 coverage/
 
 # Miscellaneous
-.public/uploads/
+/public/uploads/
 .DS_Store
 Thumbs.db
 .env
