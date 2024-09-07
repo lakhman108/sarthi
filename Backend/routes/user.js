@@ -3,13 +3,25 @@ const router = express.Router();
 const User = require('../models/usermodel.js');
 
 // Create User
+// In This code first we are checking if the request body is an array or not. If it is an array, we are iterating over each user data and saving it to the database. If it is not an array, we are directly saving the user data to the database. Finally, we are sending the saved users as a response.
 router.post('/', async (req, res) => {
   try {
-    const user = new User(req.body);
-    await user.save();
-    res.status(201).json(user);
+    let savedUsers = [];
+    if (Array.isArray(req.body)) {
+      const users = req.body;
+      for (const userData of users) {
+        const user = new User(userData);
+        await user.save();
+        savedUsers.push(user);
+      }
+    } else {
+      const user = new User(req.body);
+      await user.save();
+      savedUsers.push(user);
+    }
+    res.status(201).json(savedUsers);
   } catch (error) {
-    console.log(User);
+    console.log(error);
     res.status(400).json({ error: error.message });
   }
 });

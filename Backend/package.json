@@ -1,9 +1,17 @@
 {
   "dependencies": {
     "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dependencies": "^0.0.1",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "mongoose": "^8.6.0"
+    "ffmpeg": "^0.0.4",
+    "fluent-ffmpeg": "^2.1.3",
+    "lucide-react": "^0.438.0",
+    "mongoose": "^8.6.0",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.9.15",
+    "tailwindcss": "^3.4.10"
   },
   "name": "sarthi",
   "version": "1.0.0",
