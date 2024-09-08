@@ -4,8 +4,8 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import ClassroomUI from './components/LoadingClassroomUI';
-import ClassUI from './components/FullScreenClassUI';
+import ClassroomUI from './components/ClassroomHome';
+import ClassUI from './components/SingleClassroomLandingpage';
 import { UserProvider } from "./context/Usercontex";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
