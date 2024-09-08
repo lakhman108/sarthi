@@ -23,6 +23,17 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+router.delete('/:id', async (req, res) => {
+    try {
+        const lecture = await Lecture.findByIdAndDelete(req.params.id);
+
+        if (!lecture) return res.status(404).json({ error: 'Lecture not found' });
+        console.log(lecture);
+        res.status(200).json({ message: 'Lecture deleted' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 // Get lectures by course ID
 router.get('/course/:courseId', async (req, res) => {
   try {
