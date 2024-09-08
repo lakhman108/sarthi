@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useContext, useEffect, useReducer, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Header from './Header';
 import useFetch from '../utils/useFetch';
@@ -7,8 +7,26 @@ import LectureInfo from './LectureInfo';
 import CommentSection from './CommentSection';
 import PlaylistItem from './PlaylistItem';
 
+import { UserContext } from '../context/Usercontex';
+
+const initialState = {
+    isliked: false,
+    lectureid:null
+};
+const reducer = (state, action) => {
+    switch (action.type) {
+        case 'TOGGLE_LIKE':
+            return { ...state, isliked: !state.isliked, lectureid:action.payload };
+        default:
+            return state;
+    }
+};
+
 const VideoClassroomUI = () => {
-  const { id } = useParams(); // Assuming you're using React Router and the course ID is in the URL
+ const [state, dispatch] = useReducer(reducer,initialState);
+const usercontex=useContext(UserContext);
+console.log(usercontex);
+  const { id } = useParams(); // Get the course ID from the URL
   const [currentLectureIndex, setCurrentLectureIndex] = useState(0);
 
   const lectures = useFetch(`http://localhost:3000/api/lectures/course/${id}`, {});
@@ -20,10 +38,7 @@ const VideoClassroomUI = () => {
   }
   const currentLecture = lectures && lectures.length > 0 ? lectures[currentLectureIndex] : null;
 
-  const handleLike = () => {
 
-    console.log('Liked video:', currentLecture._id);
-  };
 
   if (!lectures) {
     return <div className="flex justify-center items-center h-screen">Loading...</div>;
@@ -47,8 +62,8 @@ const VideoClassroomUI = () => {
               <div className="lg:w-3/4">
                 {currentLecture && (
                   <>
-                    <VideoPlayer videoLink={""} />
-                    <LectureInfo lecture={currentLecture} onLike={handleLike} />
+                    <VideoPlayer videoLink={currentLecture.videoLink} />
+                    <LectureInfo lecture={currentLecture} onLike={()=>{  dispatch({ type: 'TOGGLE_LIKE', payload:currentLecture._id })} }/>
                     <CommentSection comments={currentLecture.comments} />
                   </>
                 )}
@@ -56,7 +71,7 @@ const VideoClassroomUI = () => {
               <div className="lg:w-1/4">
                 <div className="bg-white rounded-lg shadow overflow-hidden">
                   <h3 className="font-bold p-4 bg-gray-100 text-gray-800">Course Playlist</h3>
-                  <div className="overflow-y-auto max-h-[calc(100vh-20rem)]">
+                  <div className=" overflow-y-auto max-h-[calc(100vh-20rem)]">
                     {lectures.map((lecture, index) => (
                       <PlaylistItem
                         key={lecture._id}
@@ -65,8 +80,14 @@ const VideoClassroomUI = () => {
                         onClick={() => setCurrentLectureIndex(index)}
                       />
                     ))}
-                  </div>
+                  </div>{
+usercontex.user.role == "teacher" &&
+                  <button className="mt-4 w-full bg-green-500 hover:bg-green-600 text-white p-2 rounded">
+                  Add New Topic
+                </button>
+                  }
                 </div>
+
               </div>
             </div>
           </div>

@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 3000;
+const path = require('path');
 app.use(cors());
 // Connect to MongoDB
 const uri = process.env.MONGODB_URI;
@@ -31,7 +32,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/lectures', lectureRoutes);
 app.use('/api/upload', videoRoutes);
-
+app.use('/api/hls', express.static(path.join(__dirname, 'public/hls')));
 // app.use('/api/enrollments', enrollmentRoutes);
 
 app.get("/", (req, res) => {

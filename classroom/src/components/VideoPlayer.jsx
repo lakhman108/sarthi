@@ -18,13 +18,14 @@ const initialState = {
   currentTime: 0,
   duration: 0,
   quality: '-1',
-  currentChapter: { title: '' },
   showControls: true,
 };
 
 // Reducer function
 const reducer = (state, action) => {
   switch (action.type) {
+    case 'RESET':
+      return initialState;
     case 'TOGGLE_PLAY':
       return { ...state, isPlaying: !state.isPlaying };
     case 'TOGGLE_MUTE':
@@ -49,7 +50,8 @@ const reducer = (state, action) => {
 };
 
 // Main component
-const VideoPlayer = () => {
+const VideoPlayer = ({videoLink}) => {
+    const urllink=videoLink;
   const [state, dispatch] = useReducer(reducer, initialState);
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
@@ -58,12 +60,14 @@ const VideoPlayer = () => {
 
 
   useEffect(() => {
+    dispatch({ type: 'RESET' });
     const video = videoRef.current;
     if (Hls.isSupported()) {
+
       const hls = new Hls({ startLevel: -1 });
       hlsRef.current = hls;
 
-      const manifestUrl = 'https://lakhmanparmar.s3.amazonaws.com/test/master.m3u8';
+      const manifestUrl = urllink;
       hls.loadSource(manifestUrl);
       hls.attachMedia(video);
 
@@ -71,7 +75,7 @@ const VideoPlayer = () => {
         console.log('Manifest parsed, levels available');
       });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = 'https://lakhmanparmar.s3.amazonaws.com/test/master.m3u8';
+      video.src = urllink;
     }
 
     return () => {
@@ -79,13 +83,14 @@ const VideoPlayer = () => {
         hlsRef.current.destroy();
       }
     };
-  }, []);
+
+  }, [videoLink]);
 
   useEffect(() => {
     const video = videoRef.current;
     const handleTimeUpdate = () => {
       dispatch({ type: 'UPDATE_TIME', payload: video.currentTime });
-      updateChapterTitle();
+
     };
     const handleLoadedMetadata = () => dispatch({ type: 'SET_DURATION', payload: video.duration });
 
@@ -147,16 +152,7 @@ const VideoPlayer = () => {
     video.currentTime = pos * video.duration;
   };
 
-  const updateChapterTitle = () => {
-    const currentTime = videoRef.current.currentTime;
 
-    if (controlsTimeoutRef.current) {
-      clearTimeout(controlsTimeoutRef.current);
-    }
-    controlsTimeoutRef.current = setTimeout(() => {
-      dispatch({ type: 'HIDE_CONTROLS' });
-    }, 3000);
-  };
 
   const handleQualityChange = (e) => {
     const quality = e.target.value;

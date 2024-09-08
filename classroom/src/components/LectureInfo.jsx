@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ThumbsUp } from 'lucide-react';
 
 const LectureInfo = ({ lecture, onLike }) => {
 
+   
 
     return(
   <div className="bg-white p-4 rounded-lg mb-4 shadow">

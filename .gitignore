@@ -23,7 +23,9 @@ yarn.lock
 coverage/
 
 # Miscellaneous
-/public/uploads/
+public/
+/backend/node_modules/
+/classroom/node_modules/
 .DS_Store
 Thumbs.db
 .env

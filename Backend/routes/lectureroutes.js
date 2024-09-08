@@ -55,4 +55,20 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Increment like count for a lecture
+router.patch('/:id/like', async (req, res) => {
+  try {
+    const lecture = await Lecture.findById(req.params.id);
+    if (!lecture) return res.status(404).json({ error: 'Lecture not found' });
+    console.log(lecture.noOfLikes);
+    lecture.noOfLikes = (lecture.noOfLikes || 0) + 1;
+    console.log(lecture.noOfLikes);
+    await lecture.save();
+
+    res.json(lecture);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
