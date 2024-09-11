@@ -7,12 +7,15 @@ import reportWebVitals from './reportWebVitals';
 import ClassroomUI from './components/ClassroomHome';
 import ClassUI from './components/SingleClassroomLandingpage';
 import { UserProvider } from "./context/Usercontex";
+import { SidebarProvider } from './context/SidebarContext';
+
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
 root.render(
     <React.StrictMode>
         <UserProvider>
+<SidebarProvider>
     <Router>
 
       <Routes>
@@ -21,6 +24,7 @@ root.render(
         <Route path="/classroom/:id" element={<ClassUI />} />
       </Routes>
     </Router>
+    </SidebarProvider>
     </UserProvider>
     </React.StrictMode>
 

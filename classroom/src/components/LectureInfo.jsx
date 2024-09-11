@@ -2,10 +2,7 @@ import React, { useEffect } from 'react';
 import { ThumbsUp } from 'lucide-react';
 
 const LectureInfo = ({ lecture, onLike }) => {
-
-   
-
-    return(
+ return(
   <div className="bg-white p-4 rounded-lg mb-4 shadow">
 <h1>{lecture.videoLink}</h1>
     <h2 className="text-xl font-bold mb-2 text-gray-800">{lecture.nameOfTopic}</h2>

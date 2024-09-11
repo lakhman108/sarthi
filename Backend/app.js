@@ -26,14 +26,14 @@ const userRoutes = require('./routes/user');
 const courseRoutes = require('./routes/course');
 const lectureRoutes = require('./routes/lectureroutes');
 const videoRoutes=require('./routes/videoprocessingroutes/upload');
-// const enrollmentRoutes = require('./routes/enrollment');
+const enrollmentRoutes = require('./routes/enrollmentroutes');
 
 app.use('/api/users', userRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/lectures', lectureRoutes);
 app.use('/api/upload', videoRoutes);
 app.use('/api/hls', express.static(path.join(__dirname, 'public/hls')));
-// app.use('/api/enrollments', enrollmentRoutes);
+app.use('/api/enrollments', enrollmentRoutes);
 
 app.get("/", (req, res) => {
   const some = {

@@ -7,7 +7,7 @@ import CommentSection from './CommentSection';
 import PlaylistItem from './PlaylistItem';
 import { UserContext } from '../context/Usercontex';
 import Loader from './layout/Loader';
-import AddTopicModal from './AddTopicModal';
+import AddTopicModal from './TopicModal/AddTopicModal';
 
 const initialState = {
     isliked: false,
@@ -23,7 +23,7 @@ const reducer = (state, action) => {
     }
 };
 
-const VideoClassroomUI = () => {
+const VideoClassroomUI = ({courseName}) => {
     const [state, dispatch] = useReducer(reducer, initialState);
     const usercontex = useContext(UserContext);
     const { id } = useParams();
@@ -45,6 +45,18 @@ const VideoClassroomUI = () => {
         }
     };
 
+    const refreshLecture = async (lectureId) => {
+        try {
+            const response = await fetch(`http://localhost:3000/api/lectures/${lectureId}`);
+            const updatedLecture = await response.json();
+            setLectures(prevLectures => prevLectures.map(lecture =>
+                lecture._id === lectureId ? updatedLecture : lecture
+            ));
+        } catch (error) {
+            console.error("Error refreshing lecture:", error);
+        }
+    };
+
     useEffect(() => {
         fetchLectures();
     }, [id]);
@@ -56,6 +68,10 @@ const VideoClassroomUI = () => {
         }
     };
 
+    const handleLectureEdited = (editedLectureId) => {
+        refreshLecture(editedLectureId);
+    };
+
     const currentLecture = lectures && lectures.length > 0 ? lectures[currentLectureIndex] : null;
 
     if (loading) {
@@ -65,11 +81,11 @@ const VideoClassroomUI = () => {
     return (
         <div className="flex bg-gray-50 min-h-screen w-full">
             <div className="flex-1 flex flex-col overflow-hidden">
-                <Header courseTitle="Operating Systems" />
+                <Header courseTitle={courseName} />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
                     <div className="max-w-6xl mx-auto">
                         <div className="mb-6">
-                            <h1 className="text-3xl font-bold text-gray-800 mb-2">Operating Systems</h1>
+                            <h1 className="text-3xl font-bold text-gray-800 mb-2">{courseName}</h1>
                             <p className="text-gray-600">Course ID: {id}</p>
                         </div>
                         <div className="flex flex-col lg:flex-row space-y-6 lg:space-y-0 lg:space-x-6">
@@ -77,7 +93,11 @@ const VideoClassroomUI = () => {
                                 {currentLecture && (
                                     <>
                                         <VideoPlayer videoLink={currentLecture.videoLink} />
-                                        <LectureInfo lecture={currentLecture} onLike={() => { dispatch({ type: 'TOGGLE_LIKE', payload: currentLecture._id }) }} />
+                                        <LectureInfo
+                                            lecture={currentLecture}
+                                            onLike={() => { dispatch({ type: 'TOGGLE_LIKE', payload: currentLecture._id }) }}
+                                            onEdit={() => handleLectureEdited(currentLecture._id)}
+                                        />
                                         <CommentSection comments={currentLecture.comments} />
                                     </>
                                 )}
@@ -92,6 +112,7 @@ const VideoClassroomUI = () => {
                                             isActive={index === currentLectureIndex}
                                             onClick={() => setCurrentLectureIndex(index)}
                                             onLectureDeleted={handleLectureDeleted}
+                                            onLectureEdited={() => handleLectureEdited(lecture._id)}
                                         />
                                     ))}
                                     {usercontex.user.role === "teacher" && (

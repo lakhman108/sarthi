@@ -9,13 +9,13 @@ import VideoClassroomUI from "./VideoClassroomUI";
 
 const Classui = () => {
     const { id } = useParams(); // Get the 'id' parameter from the URL
-    const data = useFetch(`http://localhost:3000/api/courses/${id}`, {}); // Use the 'id' parameter in your fetch request
-    console.log(data);
+    const data = useFetch(`http://localhost:3000/api/courses/${id}`); // Use the 'id' parameter in your fetch
+
 
     return (
         <div className="flex h-screen">
             <Sidebar />
-            <VideoClassroomUI />
+           {data && <VideoClassroomUI courseName={data.courseName}/>}
         </div>
     );
 }

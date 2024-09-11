@@ -1,27 +1,11 @@
-import React, { useReducer } from 'react';
+// Sidebar.js
+import React from 'react';
 import { Home, Tv, Book, Settings, Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-const initialState = {
-  isExpanded: false,
-  isHovered: false,
-};
-
-const reducer = (state, action) => {
-  switch (action.type) {
-    case 'TOGGLE_EXPAND':
-      return { ...state, isExpanded: !state.isExpanded };
-    case 'SET_HOVER':
-      return { ...state, isHovered: true };
-    case 'UNSET_HOVER':
-      return { ...state, isHovered: false };
-    default:
-      return state;
-  }
-};
+import { useSidebar } from '../../context/SidebarContext';
 
 const Sidebar = () => {
-  const [state, dispatch] = useReducer(reducer, initialState, undefined);
+  const { state, dispatch } = useSidebar();
   const navigate = useNavigate();
 
   const handleMenuClick = () => {
@@ -44,7 +28,7 @@ const Sidebar = () => {
   const iconClass = state.isHovered || state.isExpanded ? 'self-start ml-4' : 'self-center';
 
   return (
-    <div >
+    <div>
       <div className={`${sidebarClass} bg-gray-100 hover:bg-gray-200 flex flex-col items-center py-4 space-y-8 transition-width duration-300`}>
         <button className={`p-2 rounded-full ${iconClass}`} onClick={handleMenuClick}>
           <Menu size={24} />

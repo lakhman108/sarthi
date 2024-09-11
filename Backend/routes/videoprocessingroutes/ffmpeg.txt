@@ -1,0 +1,41 @@
+ffmpeg -i ${filePath} -vf scale=426x240 -c:a aac -ar 48000 -c:v h264 -profile:v baseline -crf 20 -sc_threshold 0 -g 48 -keyint_min 48 -hls_time 4 -hls_playlist_type vod -b:v 400k -maxrate 400k -bufsize 800k -b:a 128k -hls_segment_filename '${outputDir}/240p/stream_240p_%03d.ts' ${outputDir}/240p/stream_240p.m3u8
+
+ffmpeg: This is the command-line tool for processing video and audio files.
+
+-i ${filePath}: Specifies the input file. ${filePath} is a placeholder for the path to the input video file.
+
+-vf scale=426x240: Applies a video filter (-vf) to scale the video to a resolution of 426x240 pixels.
+
+-c:a aac: Sets the audio codec (-c:a) to AAC (Advanced Audio Coding).
+
+-ar 48000: Sets the audio sample rate to 48 kHz.
+
+-c:v h264: Sets the video codec (-c:v) to H.264.
+
+-profile:v baseline: Sets the H.264 profile to "baseline", which is a simpler profile suitable for lower-end devices.
+
+-crf 20: Sets the Constant Rate Factor (CRF) to 20, which controls the quality of the output video. Lower values mean better quality.
+
+-sc_threshold 0: Sets the scene change threshold to 0, which affects how the encoder detects scene changes.
+
+-g 48: Sets the Group of Pictures (GOP) size to 48 frames. This means a new keyframe will be inserted every 48 frames.
+
+-keyint_min 48: Sets the minimum interval between keyframes to 48 frames.
+
+-hls_time 4: Sets the duration of each HLS segment to 4 seconds.
+
+-hls_playlist_type vod: Sets the playlist type to Video on Demand (VOD).
+
+-b:v 400k: Sets the video bitrate to 400 kbps.
+
+-maxrate 400k: Sets the maximum video bitrate to 400 kbps.
+
+-bufsize 800k: Sets the buffer size to 800 kbps.
+
+-b:a 128k: Sets the audio bitrate to 128 kbps.
+
+-hls_segment_filename '${outputDir}/240p/stream_240p_%03d.ts': Specifies the filename pattern for the HLS segments. ${outputDir} is a placeholder for the output directory, and %03d is a placeholder for the segment number.
+
+${outputDir}/240p/stream_240p.m3u8: Specifies the output HLS playlist file.
+
+
