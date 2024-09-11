@@ -8,29 +8,19 @@ import PlaylistItem from './PlaylistItem';
 import { UserContext } from '../context/Usercontex';
 import Loader from './layout/Loader';
 import AddTopicModal from './TopicModal/AddTopicModal';
+import axios from 'axios';
 
-const initialState = {
-    isliked: false,
-    lectureid: null
-};
 
-const reducer = (state, action) => {
-    switch (action.type) {
-        case 'TOGGLE_LIKE':
-            return { ...state, isliked: !state.isliked, lectureid: action.payload };
-        default:
-            return state;
-    }
-};
 
 const VideoClassroomUI = ({courseName}) => {
-    const [state, dispatch] = useReducer(reducer, initialState);
+
     const usercontex = useContext(UserContext);
     const { id } = useParams();
     const [currentLectureIndex, setCurrentLectureIndex] = useState(0);
     const [lectures, setLectures] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [like, setLike] = useState(false);
 
     const fetchLectures = async () => {
         setLoading(true);
@@ -56,6 +46,22 @@ const VideoClassroomUI = ({courseName}) => {
             console.error("Error refreshing lecture:", error);
         }
     };
+    const handleLike=async () => {
+        if(!currentLecture){
+            return;
+        }
+        try {
+            console.log(currentLecture);
+            await axios.patch(`http://localhost:3000/api/lectures/${currentLecture._id}/like`);
+            setLectures(
+                prevLectures => prevLectures.map(lecture =>
+lecture._id==currentLecture._id ? {...lecture,noOfLikes: lecture.noOfLikes + 1} : lecture
+                )
+            )
+        } catch (error) {
+            console.log(error);
+        }
+    }
 
     useEffect(() => {
         fetchLectures();
@@ -71,6 +77,7 @@ const VideoClassroomUI = ({courseName}) => {
     const handleLectureEdited = (editedLectureId) => {
         refreshLecture(editedLectureId);
     };
+
 
     const currentLecture = lectures && lectures.length > 0 ? lectures[currentLectureIndex] : null;
 
@@ -95,8 +102,8 @@ const VideoClassroomUI = ({courseName}) => {
                                         <VideoPlayer videoLink={currentLecture.videoLink} />
                                         <LectureInfo
                                             lecture={currentLecture}
-                                            onLike={() => { dispatch({ type: 'TOGGLE_LIKE', payload: currentLecture._id }) }}
-                                            onEdit={() => handleLectureEdited(currentLecture._id)}
+                                            onLike={handleLike}
+
                                         />
                                         <CommentSection comments={currentLecture.comments} />
                                     </>

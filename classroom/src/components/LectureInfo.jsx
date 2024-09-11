@@ -2,6 +2,9 @@ import React, { useEffect } from 'react';
 import { ThumbsUp } from 'lucide-react';
 
 const LectureInfo = ({ lecture, onLike }) => {
+    useEffect(() => {
+        
+    }, [lecture]);
  return(
   <div className="bg-white p-4 rounded-lg mb-4 shadow">
 <h1>{lecture.videoLink}</h1>

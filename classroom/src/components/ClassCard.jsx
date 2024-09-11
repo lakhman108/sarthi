@@ -10,6 +10,7 @@ const handleCardClick=()=>{
 }
 
     return(
+        
   <div className={`p-4 rounded-lg shadow-md hover:bg-purple-400 cursor-pointer ${color}` } onClick={handleCardClick} >
     <div className="flex justify-between items-start">
       <div>

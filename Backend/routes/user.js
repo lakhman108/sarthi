@@ -12,7 +12,7 @@ router.post('/', async (req, res) => {
       for (const userData of users) {
         const user = new User(userData);
         await user.save();
-        savedUsers.push(user);
+        savedUsers.push(user);f
       }
     } else {
       const user = new User(req.body);

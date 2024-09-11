@@ -1,6 +1,6 @@
 // Sidebar.js
 import React from 'react';
-import { Home, Tv, Book, Settings, Menu } from 'lucide-react';
+import { Home, Tv, Book, Settings, Menu,History,GraduationCap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSidebar } from '../../context/SidebarContext';
 
@@ -20,9 +20,10 @@ const Sidebar = () => {
     dispatch({ type: 'UNSET_HOVER' });
   };
 
-  const changeRoute = () => {
-    navigate('/classroom');
+  const changeRoute = (route) => {
+    navigate(`/${route}`);
   };
+
 
   const sidebarClass = state.isExpanded || state.isHovered ? 'w-64' : 'w-16';
   const iconClass = state.isHovered || state.isExpanded ? 'self-start ml-4' : 'self-center';
@@ -35,17 +36,20 @@ const Sidebar = () => {
         </button>
       </div>
       <div className={`${sidebarClass} h-screen bg-gray-100 flex flex-col items-center py-4 space-y-8 transition-width duration-300`} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-        <button className={`p-2 hover:bg-gray-200 rounded-full ${iconClass} inline-flex`} onClick={changeRoute}>
+
+        <button className={`p-2 hover:bg-gray-200 rounded-full ${iconClass} inline-flex`} onClick={e=>changeRoute("classroom")}>
           <Home size={24} />
           {(state.isExpanded || state.isHovered) && <span className="ml-2">Home</span>}
         </button>
+
+
         <button className={`p-2 hover:bg-gray-200 rounded-full ${iconClass} inline-flex`}>
-          <Tv size={24} />
+        <GraduationCap  size={28}/>
           {(state.isExpanded || state.isHovered) && <span className="ml-2">Enrolled Classes</span>}
         </button>
         <button className={`p-2 hover:bg-gray-200 rounded-full ${iconClass} inline-flex`}>
-          <Book size={24} />
-          {(state.isExpanded || state.isHovered) && <span className="ml-2">Library</span>}
+          <History size={24} onClick={e=>changeRoute("history")}/>
+          {(state.isExpanded || state.isHovered) && <span className="ml-2">History</span>}
         </button>
         <button className={`p-2 hover:bg-gray-200 rounded-full ${iconClass} inline-flex`}>
           <Settings size={24} />

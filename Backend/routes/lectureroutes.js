@@ -10,6 +10,7 @@ router.get("/", async (req, res) => {
 			"username",
 		);
 		res.json(lectures);
+
 	} catch (error) {
 		res.status(500).json({ error: error.message });
 	}
@@ -123,9 +124,11 @@ router.patch("/:id/update", async (req, res) => {
 	try {
 		const lecture = await Lecture.findById(req.params.id);
 
+
 		if (!lecture) return res.status(404).json({ error: "Lecture not found" });
 		lecture.nameOfTopic = req.body.nameOfTopic || lecture.nameOfTopic;
-		lecture.videoLink = req.body.videoLink || lecture.videoLink;
+        
+		lecture.videoLink =  lecture.videoLink;
 
 		await lecture.save();
 
