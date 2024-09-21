@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import Header from './layout/Header';
 import VideoPlayer from './VideoPlayer';
 import LectureInfo from './LectureInfo';
-import CommentSection from './CommentSection';
+import CommentSection from './Comments/CommentSection';
 import PlaylistItem from './PlaylistItem';
 import { UserContext } from '../context/Usercontex';
 import Loader from './layout/Loader';
@@ -12,7 +12,7 @@ import axios from 'axios';
 
 
 
-const VideoClassroomUI = ({courseName}) => {
+const VideoClassroomUI = ({ courseName }) => {
 
     const usercontex = useContext(UserContext);
     const { id } = useParams();
@@ -46,20 +46,20 @@ const VideoClassroomUI = ({courseName}) => {
             console.error("Error refreshing lecture:", error);
         }
     };
-    const handleLike=async () => {
-        if(!currentLecture){
+    const handleLike = async () => {
+        if (!currentLecture) {
             return;
         }
         try {
-            console.log(currentLecture);
+            //console.log(currentLecture);
             await axios.patch(`http://localhost:3000/api/lectures/${currentLecture._id}/like`);
             setLectures(
                 prevLectures => prevLectures.map(lecture =>
-lecture._id==currentLecture._id ? {...lecture,noOfLikes: lecture.noOfLikes + 1} : lecture
+                    lecture._id == currentLecture._id ? { ...lecture, noOfLikes: lecture.noOfLikes + 1 } : lecture
                 )
             )
         } catch (error) {
-            console.log(error);
+            //console.log(error);
         }
     }
 
@@ -105,7 +105,7 @@ lecture._id==currentLecture._id ? {...lecture,noOfLikes: lecture.noOfLikes + 1} 
                                             onLike={handleLike}
 
                                         />
-                                        <CommentSection comments={currentLecture.comments} />
+                                        <CommentSection lectureId={currentLecture._id} />
                                     </>
                                 )}
                             </div>

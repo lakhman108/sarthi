@@ -105,6 +105,17 @@ router.patch("/:id/like", async (req, res) => {
 	}
 });
 
+
+router.get("/:id/comments", async (req, res) => {
+    try {
+        const lecture = await Lecture.findById(req.params.id).populate("comments.userId", "username");
+        if (!lecture) return res.status(404).json({ error: "Lecture not found" });
+
+        res.json(lecture.comments);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 router.patch('/:id/comment', async (req, res) => {
 
     try {
@@ -120,6 +131,28 @@ router.patch('/:id/comment', async (req, res) => {
     }
 });
 
+//this url is for adding a comment to a lecture
+router.post('/:lectureid/comments', async (req, res) => {
+
+    try {
+        const lecture = await Lecture.findById(req.params.lectureid);
+        const userId="66d9726a1396cfd35c9b7e83";
+        console.log(lecture.nameOfTopic);
+        console.log(req.body.text);
+        if (!lecture) return res.status(404).json({ error: 'Lecture not found' });
+        const commentdata = {
+            userId: userId,
+            text: req.body.text
+        };
+        lecture.comments.push(commentdata);
+        await lecture.save();
+
+        res.json(lecture.comments);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 router.patch("/:id/update", async (req, res) => {
 	try {
 		const lecture = await Lecture.findById(req.params.id);
@@ -127,7 +160,7 @@ router.patch("/:id/update", async (req, res) => {
 
 		if (!lecture) return res.status(404).json({ error: "Lecture not found" });
 		lecture.nameOfTopic = req.body.nameOfTopic || lecture.nameOfTopic;
-        
+
 		lecture.videoLink =  lecture.videoLink;
 
 		await lecture.save();
