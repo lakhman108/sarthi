@@ -8,6 +8,7 @@ const userSchema = new Schema({
   profilePictureImageLink: String,
   email: { type: String, required: true, unique: true },
   role: { type: String, enum: ['student', 'teacher'], required: true }
+  
 });
 
 module.exports = mongoose.model('User', userSchema);
