@@ -6,9 +6,10 @@ import ClassModal from "../createnewclass/ClassModal";
 const Header = ({ refresh }) => {
   const usercontex = useContext(UserContext);
 
-  console.log(usercontex.user.role);
+
   const [isCreateClassModalOpen, setIsCreateClassModalOpen] = useState(false);
 const [JoinClassModal,setJoinClassModal]=useState(false);
+console.log(isCreateClassModalOpen);
   const handleCloseModal = () => {
     setIsCreateClassModalOpen(false);
   };
@@ -28,11 +29,11 @@ const [JoinClassModal,setJoinClassModal]=useState(false);
         </button>
         }
         {
-        usercontex.user.role == "student"
+        usercontex.user.role === "teacher"
         &&
         <button
           className="p-2 hover:bg-gray-100 rounded-full"
-            onClick={() => {setJoinClassModal(true); }}
+            onClick={() => {setIsCreateClassModalOpen(true); }}
         >
           <Plus />
         </button>

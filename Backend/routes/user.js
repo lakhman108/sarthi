@@ -1,7 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/usermodel.js');
+const { register, login } = require('../controllers/authController');
+const { authenticateToken, authorizeRole } = require('../middleware/authMiddleware');
 
+
+router.post('/register', register);
+router.post('/login', login);
+
+// Protected routes example
+router.get('/student-profile', authenticateToken, authorizeRole(['student']), (req, res) => {
+  res.json({ message: 'Student profile accessed' });
+});
+
+router.get('/teacher-profile', authenticateToken, authorizeRole(['teacher']), (req, res) => {
+  res.json({ message: 'Teacher profile accessed' });
+});
 // Create User
 // In This code first we are checking if the request body is an array or not. If it is an array, we are iterating over each user data and saving it to the database. If it is not an array, we are directly saving the user data to the database. Finally, we are sending the saved users as a response.
 router.post('/', async (req, res) => {
