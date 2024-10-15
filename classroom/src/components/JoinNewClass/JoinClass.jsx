@@ -14,4 +14,4 @@ import React from "react";
 
 }
 
-export default JoinClass;
+export default JoinClasses;

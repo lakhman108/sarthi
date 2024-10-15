@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Lecture = require("../models/lecturemodel.js");
 const fs = require("fs");
+const { authenticateToken, authorizeRole } = require('../middleware/authMiddleware');
 // Get all lectures
 router.get("/", async (req, res) => {
 	try {
@@ -105,7 +106,7 @@ router.patch("/:id/like", async (req, res) => {
 	}
 });
 
-
+//find a lecture comment
 router.get("/:id/comments", async (req, res) => {
     try {
         const lecture = await Lecture.findById(req.params.id).populate("comments.userId", "username");
@@ -116,7 +117,9 @@ router.get("/:id/comments", async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-router.patch('/:id/comment', async (req, res) => {
+
+//to add comment
+router.patch('/:id/comment',async (req, res) => {
 
     try {
         const lecture = await Lecture.findById(req.params.id);
@@ -132,22 +135,26 @@ router.patch('/:id/comment', async (req, res) => {
 });
 
 //this url is for adding a comment to a lecture
-router.post('/:lectureid/comments', async (req, res) => {
+router.post('/:lectureid/comments', authenticateToken, authorizeRole(['student', 'teacher']), async (req, res) => {
 
     try {
-        const lecture = await Lecture.findById(req.params.lectureid);
-        const userId="66d9726a1396cfd35c9b7e83";
+        const lecture = await Lecture.findById(req.params.lectureid).populate("comments.userId", "username");
+
+        console.log("----------------------------------------");
         console.log(lecture.nameOfTopic);
         console.log(req.body.text);
+        console.log(req.user.userId);
+        console.log("----------------------------------------");
         if (!lecture) return res.status(404).json({ error: 'Lecture not found' });
         const commentdata = {
-            userId: userId,
+            userId: req.user.userId,
             text: req.body.text
         };
         lecture.comments.push(commentdata);
-        await lecture.save();
+        const updatedLecture = await lecture.save();
+        const updatedComments = await Lecture.findById(req.params.lectureid).populate("comments.userId", "username");
 
-        res.json(lecture.comments);
+        res.json(updatedComments.comments);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

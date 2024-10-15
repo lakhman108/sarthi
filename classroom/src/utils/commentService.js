@@ -1,19 +1,28 @@
 import axios from 'axios';
-
+import Cookies from 'js-cookie';
 const API_URL = 'http://localhost:3000/api';
 
 export const fetchComments = async (lectureId) => {
     console.log(lectureId)
-  const response = await axios.get(`${API_URL}/lectures/${lectureId}/comments`);
+  const response = await axios.get(`${API_URL}/lectures/${lectureId}/comments`,{
+    headers: {
+      Authorization: `Bearer ${Cookies.get('token')}`
+    },
+  });
   return response.data;
 };
 
 export const postComment = async (lectureId, text) => {
 
 
-  const response = await axios.post(`${API_URL}/lectures/${lectureId}/comments`, {
-   text : text
-   });
+  const response = await axios.post(`${API_URL}/lectures/${lectureId}/comments`, {text : text},
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${Cookies.get('token')}`
+      },
+    }
+  );
   return response.data;
 };
 

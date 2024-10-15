@@ -9,6 +9,8 @@ import ClassUI from './components/SingleClassroomLandingpage';
 import { UserProvider } from "./context/Usercontex";
 import { SidebarProvider } from './context/SidebarContext';
 
+import SettingsPage from './components/settings/SettingsPage';
+
 
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -20,9 +22,10 @@ root.render(
     <Router>
 
       <Routes>
-        <Route path="/" element={<App />} />
+        <Route path="/auth" element={<App />} />
         <Route path="/classroom" element={<ClassroomUI />} />
         <Route path="/classroom/:id" element={<ClassUI />} />
+        <Route path="/settings" element={<SettingsPage/>} />
       </Routes>
     </Router>
     </SidebarProvider>

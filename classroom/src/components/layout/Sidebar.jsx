@@ -1,6 +1,6 @@
 // Sidebar.js
 import React from 'react';
-import { Home, Tv, Book, Settings, Menu,History,GraduationCap } from 'lucide-react';
+import { Home, Settings, Menu,History,GraduationCap, NotebookIcon, Notebook, LucideNotebookPen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSidebar } from '../../context/SidebarContext';
 
@@ -44,14 +44,15 @@ const Sidebar = () => {
 
 
         <button className={`p-2 hover:bg-gray-200 rounded-full ${iconClass} inline-flex`}>
-        <GraduationCap  size={28}/>
-          {(state.isExpanded || state.isHovered) && <span className="ml-2">Enrolled Classes</span>}
+        <LucideNotebookPen  size={24}/>
+          {(state.isExpanded || state.isHovered) && <span className="ml-2">Course Notes</span>}
         </button>
         <button className={`p-2 hover:bg-gray-200 rounded-full ${iconClass} inline-flex`}>
           <History size={24} onClick={e=>changeRoute("history")}/>
           {(state.isExpanded || state.isHovered) && <span className="ml-2">History</span>}
         </button>
-        <button className={`p-2 hover:bg-gray-200 rounded-full ${iconClass} inline-flex`}>
+        <button className={`p-2 hover:bg-gray-200 rounded-full ${iconClass} inline-flex`}
+        onClick={() => changeRoute('settings')}>
           <Settings size={24} />
           {(state.isExpanded || state.isHovered) && <span className="ml-2">Settings</span>}
         </button>

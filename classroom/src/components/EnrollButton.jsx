@@ -8,6 +8,7 @@ const EnrollButton = ({ courseId }) => {
 
   const handleEnroll = async () => {
     try {
+        console.log(user);
       await axios.post('http://localhost:3000/api/enrollments', {
         studentId: user._id,
         courseId: courseId

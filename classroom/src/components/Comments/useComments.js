@@ -14,6 +14,12 @@ const useComments = (lectureId) => {
 
   const addComment = async (text) => {
     const newComment = await postComment(lectureId, text);
+    console.log("---------newComment-----------")
+    console.log(newComment);
+    console.log("--------------------")
+    console.log("----------all comments----------")
+    console.log(comments);
+    console.log("--------------------")
     setComments((e)=>[...newComment]);
   };
 

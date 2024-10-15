@@ -3,7 +3,7 @@ import { User, Book, EllipsisVertical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import OptionsModal from './OptionsModal';
 
-const ClassCard = ({ _id, title, teacher, color, onDelete, onEdit }) => {
+const ClassCard = ({ _id, title, teacher, color, onDelete, onEdit,role }) => {
   const [showOptions, setShowOptions] = useState(false);
   const navigate = useNavigate();
 
@@ -31,7 +31,7 @@ const ClassCard = ({ _id, title, teacher, color, onDelete, onEdit }) => {
           }}
           className="p-2 hover:bg-gray-200 rounded-full"
         >
-          <EllipsisVertical size={20} />
+          {role ==="teacher" && <EllipsisVertical size={20} />}
         </button>
       </div>
       <div className="mt-16 flex justify-between">

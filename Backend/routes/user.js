@@ -3,6 +3,12 @@ const router = express.Router();
 const User = require('../models/usermodel.js');
 const { register, login } = require('../controllers/authController');
 const { authenticateToken, authorizeRole } = require('../middleware/authMiddleware');
+const userController = require('../controllers/userController.js');
+
+
+router.patch('/:id', authenticateToken, userController.updateUser);
+router.patch('/:id/password', authenticateToken, userController.updatePassword);
+router.patch('/:id/profile-picture', authenticateToken, userController.updateProfilePicture);
 
 
 router.post('/register', register);
@@ -18,30 +24,9 @@ router.get('/teacher-profile', authenticateToken, authorizeRole(['teacher']), (r
 });
 // Create User
 // In This code first we are checking if the request body is an array or not. If it is an array, we are iterating over each user data and saving it to the database. If it is not an array, we are directly saving the user data to the database. Finally, we are sending the saved users as a response.
-router.post('/', async (req, res) => {
-  try {
-    let savedUsers = [];
-    if (Array.isArray(req.body)) {
-      const users = req.body;
-      for (const userData of users) {
-        const user = new User(userData);
-        await user.save();
-        savedUsers.push(user);f
-      }
-    } else {
-      const user = new User(req.body);
-      await user.save();
-      savedUsers.push(user);
-    }
-    res.status(201).json(savedUsers);
-  } catch (error) {
-    console.log(error);
-    res.status(400).json({ error: error.message });
-  }
-});
 
 // Read all Users
-router.get('/', async (req, res) => {
+router.get('/all', async (req, res) => {
   try {
     const users = await User.find();
     res.json(users);
@@ -49,6 +34,21 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+//get logged in user info
+router.get('/',authenticateToken, authorizeRole(['student','teacher']), async (req, res) => {
+
+
+
+
+      try {
+        const user = await User.findById(req.user.userId);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        res.json(user);
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+  });
 
 // Read a single User
 router.get('/:id', async (req, res) => {
@@ -64,6 +64,7 @@ router.get('/:id', async (req, res) => {
 // Update User
 router.patch('/:id', async (req, res) => {
   try {
+    console.log(req.body);
     const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json(user);

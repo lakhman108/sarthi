@@ -1,11 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
-
+import Cookies from 'js-cookie';
 const useFetch = (url, options) => {
   const [data, setData] = useState(null);
-
+ const savedtoken=Cookies.get('token');
   const fetchData = useCallback(async () => {
     try {
-      const response = await fetch(url, options);
+      const response = await fetch(url, options,{
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${savedtoken}`,
+        },
+      });
       const data = await response.json();
       setData(data);
     } catch (error) {

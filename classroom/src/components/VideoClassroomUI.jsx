@@ -9,10 +9,11 @@ import { UserContext } from '../context/Usercontex';
 import Loader from './layout/Loader';
 import AddTopicModal from './TopicModal/AddTopicModal';
 import axios from 'axios';
+import Cookies from 'js-cookie';
+import { toast, ToastContainer } from 'react-toastify';
+import { handleNoteSave } from '../utils/notesService';
 
-
-
-const VideoClassroomUI = ({ courseName }) => {
+const VideoClassroomUI = ({ courseName,classCode }) => {
 
     const usercontex = useContext(UserContext);
     const { id } = useParams();
@@ -21,6 +22,28 @@ const VideoClassroomUI = ({ courseName }) => {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [like, setLike] = useState(false);
+    const [note, setNote] = useState('');
+
+
+  useEffect(() => {
+    // Fetch existing note when component mounts
+    const fetchNote = async () => {
+      try {
+        const response = await axios.get(`http://localhost:3000/api/enrollments/${id}/notes`,
+            {
+                headers: {
+                  Authorization: `Bearer ${Cookies.get('token')}`,
+                },
+              }
+        );
+        setNote(response.data.notes || '');
+      } catch (error) {
+        console.error("Error fetching note:", error);
+      }
+    };
+    fetchNote();
+  }, [id]);
+
 
     const fetchLectures = async () => {
         setLoading(true);
@@ -86,14 +109,16 @@ const VideoClassroomUI = ({ courseName }) => {
     }
 
     return (
+
         <div className="flex bg-gray-50 min-h-screen w-full">
+            <ToastContainer />
             <div className="flex-1 flex flex-col overflow-hidden">
                 <Header courseTitle={courseName} />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
                     <div className="max-w-6xl mx-auto">
                         <div className="mb-6">
                             <h1 className="text-3xl font-bold text-gray-800 mb-2">{courseName}</h1>
-                            <p className="text-gray-600">Course ID: {id}</p>
+                            <p className="text-gray-600">Course ID: {classCode}</p>
                         </div>
                         <div className="flex flex-col lg:flex-row space-y-6 lg:space-y-0 lg:space-x-6">
                             <div className="lg:w-3/4">
@@ -131,6 +156,21 @@ const VideoClassroomUI = ({ courseName }) => {
                                 </div>
                             </aside>
                         </div>
+                        <div className="mt-6">
+              <h3 className="text-xl font-bold mb-2">Course Notes</h3>
+              <textarea
+                className="w-full h-32 p-2 border rounded"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Take notes for this course..."
+              />
+              <button
+                className="mt-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+                onClick={()=>handleNoteSave(id,note)}
+              >
+                Save Note
+              </button>
+                       </div>
                     </div>
                 </main>
             </div>
