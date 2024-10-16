@@ -10,7 +10,7 @@ import Loader from './layout/Loader';
 import AddTopicModal from './TopicModal/AddTopicModal';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { toast, ToastContainer } from 'react-toastify';
+import {  ToastContainer } from 'react-toastify';
 import { handleNoteSave } from '../utils/notesService';
 
 const VideoClassroomUI = ({ courseName,classCode }) => {

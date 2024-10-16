@@ -43,10 +43,7 @@ const Sidebar = () => {
         </button>
 
 
-        <button className={`p-2 hover:bg-gray-200 rounded-full ${iconClass} inline-flex`}>
-        <LucideNotebookPen  size={24}/>
-          {(state.isExpanded || state.isHovered) && <span className="ml-2">Course Notes</span>}
-        </button>
+
         <button className={`p-2 hover:bg-gray-200 rounded-full ${iconClass} inline-flex`}>
           <History size={24} onClick={e=>changeRoute("history")}/>
           {(state.isExpanded || state.isHovered) && <span className="ml-2">History</span>}
@@ -56,6 +53,7 @@ const Sidebar = () => {
           <Settings size={24} />
           {(state.isExpanded || state.isHovered) && <span className="ml-2">Settings</span>}
         </button>
+      
       </div>
     </div>
   );

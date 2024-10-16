@@ -20,8 +20,8 @@ export const updateUserPassword = async (userId, currentPassword, newPassword) =
   return response.data;
 };
 
-export const updateUserProfilePicture = async (userId, formData) => {
-  const response = await axios.patch(`${API_URL}/${userId}/profile-picture`, formData, {
+export const updateUserProfilePicture = async (formData) => {
+  const response = await axios.post(`${API_URL}/profile-picture`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
         'Authorization': `Bearer ${Cookies.get('token')}`

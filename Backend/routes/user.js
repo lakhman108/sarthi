@@ -8,7 +8,7 @@ const userController = require('../controllers/userController.js');
 
 router.patch('/:id', authenticateToken, userController.updateUser);
 router.patch('/:id/password', authenticateToken, userController.updatePassword);
-router.patch('/:id/profile-picture', authenticateToken, userController.updateProfilePicture);
+router.post('/profile-picture', authenticateToken,authorizeRole(['student','teacher']), userController.updateProfilePicture);
 
 
 router.post('/register', register);
