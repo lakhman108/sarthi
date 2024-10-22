@@ -25,6 +25,22 @@ const VideoClassroomUI = ({ courseName,classCode }) => {
     const [note, setNote] = useState('');
 
 
+    const handleLectureSelect = async (index) => {
+        setCurrentLectureIndex(index);
+        const selectedLecture = lectures[index];
+
+        try {
+            await axios.patch(`http://localhost:3000/api/lectures/${selectedLecture._id}/view`);
+            setLectures(prevLectures => prevLectures.map(lecture =>
+                lecture._id === selectedLecture._id
+                    ? { ...lecture, noOfViews: lecture.noOfViews + 1 }
+                    : lecture
+            ));
+        } catch (error) {
+            console.error("Error updating views:", error);
+        }
+    };
+
   useEffect(() => {
     // Fetch existing note when component mounts
     const fetchNote = async () => {
@@ -118,7 +134,10 @@ const VideoClassroomUI = ({ courseName,classCode }) => {
                     <div className="max-w-6xl mx-auto">
                         <div className="mb-6">
                             <h1 className="text-3xl font-bold text-gray-800 mb-2">{courseName}</h1>
-                            <p className="text-gray-600">Course ID: {classCode}</p>
+                            <p className="text-gray-600"><p className="text-gray-600">
+  {usercontex.user.role === "teacher" && `Course Id: ${classCode}`}
+</p>
+</p>
                         </div>
                         <div className="flex flex-col lg:flex-row space-y-6 lg:space-y-0 lg:space-x-6">
                             <div className="lg:w-3/4">
@@ -142,7 +161,10 @@ const VideoClassroomUI = ({ courseName,classCode }) => {
                                             key={lecture._id}
                                             lecture={lecture}
                                             isActive={index === currentLectureIndex}
-                                            onClick={() => setCurrentLectureIndex(index)}
+                                            onClick={() => {
+                                                setCurrentLectureIndex(index);
+                                                handleLectureSelect(index);
+                                            }}
                                             onLectureDeleted={handleLectureDeleted}
                                             onLectureEdited={() => handleLectureEdited(lecture._id)}
                                         />

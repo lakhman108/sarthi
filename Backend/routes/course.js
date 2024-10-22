@@ -8,23 +8,9 @@ const { authenticateToken, authorizeRole } = require('../middleware/authMiddlewa
 const fs = require('fs/promises');
 
 
-// Get all courses
-// router.get('/', async (req, res) => {
-//     try {
-//         const courses = await Course.find().select('courseName classCode -_id');
-//         console.log(courses);
-
-//       res.json(courses);
-//     } catch (error) {
-//       res.status(500).json({ error: error.message });
-//     }
-//   });
 
   router.get('/', authenticateToken, authorizeRole(['student', 'teacher']), async (req, res) => {
     try {
-        console.log("\n\n\n")
-        console.log("finding enrolled classes");
-
       // Finding enrollments for the authenticated user
       const enrollments = await Enrollment.find({ studentId: req.user.userId } )
 

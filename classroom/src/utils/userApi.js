@@ -8,7 +8,7 @@ export const updateUserName = async (userId, newName) => {
         Authorization: `Bearer ${Cookies.get('token')}`
       }
   });
-  return response.data;
+  return response;
 };
 
 export const updateUserPassword = async (userId, currentPassword, newPassword) => {

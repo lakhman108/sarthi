@@ -13,13 +13,9 @@ const useComments = (lectureId) => {
   }, [lectureId]);
 
   const addComment = async (text) => {
-    const newComment = await postComment(lectureId, text);
-    console.log("---------newComment-----------")
-    console.log(newComment);
-    console.log("--------------------")
-    console.log("----------all comments----------")
-    console.log(comments);
-    console.log("--------------------")
+    let newComment = await postComment(lectureId, text);
+    newComment=await fetchComments(lectureId);
+    
     setComments((e)=>[...newComment]);
   };
 

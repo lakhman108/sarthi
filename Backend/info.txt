@@ -1,0 +1,108 @@
+
+
+1. Authentication Module (authController.js, authMiddleware.js):
+
+Description:
+This module handles user authentication and authorization.
+
+Functional Prototype:
+- exports.register = async (req, res) => {}: Registers a new user
+- exports.login = async (req, res) => {}: Logs in a user and returns a JWT token
+- exports.authenticateToken = (req, res, next) => {}: Middleware to authenticate JWT tokens
+- exports.authorizeRole = (roles) => {}: Middleware to authorize user roles
+
+2. User Module (user.js):
+
+Description:
+Manages user-related operations including profile management and role-based access control.
+
+Functional Prototype:
+- router.patch('/:id', authenticateToken, userController.updateUser): Updates user information
+- router.patch('/:id/password', authenticateToken, userController.updatePassword): Updates user password
+- router.post('/profile-picture', authenticateToken, authorizeRole(['student','teacher']), userController.updateProfilePicture): Updates user profile picture
+- router.get('/', authenticateToken, authorizeRole(['student','teacher'])): Retrieves logged-in user info
+- router.get('/all'): Retrieves all users (admin function)
+- router.get('/:id'): Retrieves a single user by ID
+- router.patch('/:id'): Updates a user
+- router.delete('/:id'): Deletes a user
+
+3. Course Module (course.js):
+
+Description:
+Handles course-related operations including creation, retrieval, updating, and deletion of courses.
+
+Functional Prototype:
+- router.get('/', authenticateToken, authorizeRole(['student', 'teacher'])): Retrieves courses for authenticated user
+- router.get('/:id'): Retrieves a specific course by ID
+- router.post('/', authenticateToken, authorizeRole(['student', 'teacher'])): Creates a new course
+- router.patch('/:id'): Updates course information
+- router.delete('/:id', authenticateToken, authorizeRole(['student', 'teacher'])): Deletes a course and associated data
+
+4. Lecture Module (lecturemodel.js):
+
+Description:
+Defines the schema for lectures within courses.
+
+Schema:
+- courseId: Reference to the associated course
+- nameOfTopic: Name of the lecture topic
+- videoLink: Link to the lecture video
+- noOfViews: Number of views for the lecture
+- noOfLikes: Number of likes for the lecture
+- comments: Array of user comments on the lecture
+
+5. Enrollment Module (enrollmentroutes.js):
+
+Description:
+Manages student enrollments in courses.
+
+Functional Prototype:
+- router.post('/'): Creates a new enrollment
+- router.get('/'): Retrieves all enrollments
+- router.get('/:id'): Retrieves enrollments for a specific student
+- router.get('/:id/notes', authenticateToken, authorizeRole(['student', 'teacher'])): Retrieves notes for a specific enrollment
+- router.patch('/:id'): Updates an enrollment
+- router.patch('/:id/notes', authenticateToken, authorizeRole(['student', 'teacher'])): Updates notes for an enrollment
+- router.delete('/:id'): Deletes an enrollment
+
+6. Video Processing Module (upload.js):
+
+Description:
+Handles video upload and processing for course lectures.
+
+Functional Prototype:
+- app.post('/', upload.single('uploadedFile')): Uploads a video file and processes it into HLS format for streaming
+
+Key Features:
+- Supports multiple video resolutions (240p, 360p, 720p)
+- Generates HLS playlists for adaptive streaming
+- Uses FFmpeg for video transcoding
+- Creates a master playlist for multi-resolution streaming
+
+Lecture Module (lectureroutes.js):
+
+Description:
+This module handles all lecture-related operations, including creation, retrieval, updating, and deletion of lectures. It also manages comments and likes on lectures.
+
+Functional Prototype:
+
+- router.get("/"): Retrieves all lectures with populated user comments
+- router.get("/:id"): Retrieves a specific lecture by ID with populated user comments
+- router.delete("/:id"): Deletes a lecture and its associated video files
+- router.get("/course/:courseId"): Retrieves all lectures for a specific course
+- router.post("/"): Creates one or multiple new lectures
+- router.patch("/:id/like"): Increments the like count for a lecture
+- router.get("/:id/comments"): Retrieves comments for a specific lecture
+- router.patch("/:id/comment"): Adds a new comment to a lecture
+- router.post("/:lectureid/comments", authenticateToken, authorizeRole(['student', 'teacher'])): Adds an authenticated comment to a lecture
+- router.patch("/:id/update"): Updates lecture information (name of topic)
+
+Key Features:
+- Supports CRUD operations for lectures
+- Manages lecture comments with user authentication
+- Handles lecture likes
+- Integrates with file system for video management
+- Implements role-based access control for certain operations
+- Populates user information for comments
+
+This module provides a comprehensive set of routes for managing lectures within the learning platform, including video content, user interactions, and course associations.

@@ -35,6 +35,7 @@ app.use('/api/upload', videoRoutes);
 app.use('/api/hls', express.static(path.join(__dirname, 'public/hls')));
 app.use('/api/enrollments', enrollmentRoutes);
 
+
 app.get("/", (req, res) => {
   const some = {
     "keys": "this is something that i am learning"

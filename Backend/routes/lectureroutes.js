@@ -105,13 +105,32 @@ router.patch("/:id/like", async (req, res) => {
 		res.status(500).json({ error: error.message });
 	}
 });
+router.patch("/:id/view", async (req, res) => {
+	try {
+        console.log("view");
+        console.log(req.params.id);
+		const lecture = await Lecture.findById(req.params.id);
+		if (!lecture) return res.status(404).json({ error: "Lecture not found" });
+
+		lecture.noOfViews = (lecture.noOfViews || 0) + 1;
+		console.log(lecture.noOfViews);
+		await lecture.save();
+		res.json(lecture);
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+});
+
 
 //find a lecture comment
 router.get("/:id/comments", async (req, res) => {
     try {
-        const lecture = await Lecture.findById(req.params.id).populate("comments.userId", "username");
+        const lecture = await Lecture.findById(req.params.id).populate({
+            path: "comments.userId",
+            select: "username profilePictureImageLink"
+        });
         if (!lecture) return res.status(404).json({ error: "Lecture not found" });
-
+       console.log(lecture.comments);
         res.json(lecture.comments);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -122,12 +141,16 @@ router.get("/:id/comments", async (req, res) => {
 router.patch('/:id/comment',async (req, res) => {
 
     try {
-        const lecture = await Lecture.findById(req.params.id);
+        let lecture = await Lecture.findById(req.params.id);
         if (!lecture) return res.status(404).json({ error: 'Lecture not found' });
 
         lecture.comments.push(req.body);
         await lecture.save();
 
+        lecture = await Lecture.findById(req.params.id).populate({
+            path: "comments.userId",
+            select: "username profilePictureImageLink"
+        });
         res.json(lecture);
     } catch (error) {
         res.status(500).json({ error: error.message });

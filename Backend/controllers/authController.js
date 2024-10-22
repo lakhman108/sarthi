@@ -35,6 +35,7 @@ exports.login = async (req, res) => {
     if(!user) {
         return res.status(401).json({ error: 'No such user with this email' });
     }
+
     if (!(await user.comparePassword(password))) {
       console.log("Invalid credentials");
       return res.status(401).json({ error: 'Invalid Password' });

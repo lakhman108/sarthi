@@ -38,7 +38,7 @@ const uploadProfilePicture = (req, res) => {
         } else {
           console.log("File uploaded successfully:", req.file);
           const fileUrl = `http://localhost:3000/api/hls/profilePictures/${req.file.filename}`;
-          console.log("Generated file URL:", fileUrl);
+        //   console.log("Generated file URL:", fileUrl);
           resolve(fileUrl);
         }
       });
@@ -49,7 +49,17 @@ const uploadProfilePicture = (req, res) => {
 
 exports.updateUser = async (req, res) => {
   try {
-    const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
+
+    let user;
+    if(req.body.username) {
+        user=await User.findOne({ username: req.body.username });
+        console.log("User:", user);
+        if(user) {
+            console.log("Username already exists deer");
+            return res.status(400).json({ error: 'Username already exists' });
+        }
+    }
+     user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json(user);
   } catch (error) {
@@ -73,8 +83,6 @@ exports.updatePassword = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
-
-
 
 
 exports.updateProfilePicture = async (req, res) => {
@@ -105,3 +113,43 @@ exports.updateProfilePicture = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+// In This code first we are checking if the request body is an array or not. If it is an array, we are iterating over each user data and saving it to the database. If it is not an array, we are directly saving the user data to the database. Finally, we are sending the saved users as a response.
+
+exports.getLoggedInUser = async (req, res) => {
+    try {
+      const user = await User.findById(req.user.userId);
+      if (!user) return res.status(404).json({ error: 'User not found' });
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+
+  exports.getAllUsers = async (req, res) => {
+    try {
+      const users = await User.find();
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+
+  exports.getUserById = async (req, res) => {
+    try {
+      const user = await User.findById(req.params.id);
+      if (!user) return res.status(404).json({ error: 'User not found' });
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+
+  exports.deleteUser = async (req, res) => {
+    try {
+      const user = await User.findByIdAndDelete(req.params.id);
+      if (!user) return res.status(404).json({ error: 'User not found' });
+      res.json({ message: 'User deleted', user });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  };
