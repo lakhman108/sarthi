@@ -75,6 +75,9 @@ router.post('/',authenticateToken, authorizeRole(['student', 'teacher']), async 
       const enrollment=new Enrollment(payload);
       const response=await enrollment.save();
       console.log("\n\n\n")
+      console.log(coursedata);
+      console.log(response);
+      console.log("\n\n\n")
       savedCourses.push(course);
     }
     res.status(201).json(savedCourses);

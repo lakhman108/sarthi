@@ -80,11 +80,11 @@ const ChangeProfilePictureForm = ({ user, setUser }) => {
           />
         </div>
       </div>
-      {previewUrl && (
+      {/* {previewUrl && (
         <div className="mt-4">
           <img src={previewUrl} alt="Preview" className="w-32 h-32 object-cover rounded-full" />
         </div>
-      )}
+      )} */}
       <button
         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300 disabled:opacity-50"
         type="submit"

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 const ShareClassroom = ({ inviteCode }) => {
+
+
   const [showCopied, setShowCopied] = useState(false);
   const shareUrl = `${window.location.origin}/join/${inviteCode}`;
 

@@ -24,7 +24,7 @@ const VideoClassroomUI = ({ courseName,classCode }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [like, setLike] = useState(false);
     const [note, setNote] = useState('');
-
+    const [showShare,setShowShare] =useState(false);
 
     const handleLectureSelect = async (index) => {
         setCurrentLectureIndex(index);
@@ -195,8 +195,18 @@ const VideoClassroomUI = ({ courseName,classCode }) => {
                 Save Note
               </button>
                        </div>
-                   {  usercontex.user.role=="teacher" &&  <ShareClassroom  inviteCode={classCode}/>}
+                       {usercontex.user.role === "teacher" && (
+  <div className="mt-4">
+    <button
+      onClick={() => setShowShare(!showShare)}
+      className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+    >
+      {showShare ? 'Hide Share Options' : 'Share Classroom'}
+    </button>
 
+    {showShare && <ShareClassroom inviteCode={classCode} />}
+  </div>
+)}
                     </div>
                 </main>
 
