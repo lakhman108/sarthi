@@ -6,8 +6,11 @@ const courseSchema = new Schema({
   teacherId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   semester: { type: Number, min: 1, max: 8, required: true },
   lectures: [{ type: Schema.Types.ObjectId, ref: 'Lecture' }],
-  classCode: { type: String, unique: true, required: true }
+  classCode: { type: String, unique: true, required: true },
+
 });
+
+
 
 courseSchema.statics.generateClassCode = function() {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';

@@ -12,6 +12,7 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 import {  ToastContainer } from 'react-toastify';
 import { handleNoteSave } from '../utils/notesService';
+import ShareClassroom from './ShareClassroom';
 
 const VideoClassroomUI = ({ courseName,classCode }) => {
 
@@ -128,6 +129,7 @@ const VideoClassroomUI = ({ courseName,classCode }) => {
 
         <div className="flex bg-gray-50 min-h-screen w-full">
             <ToastContainer />
+
             <div className="flex-1 flex flex-col overflow-hidden">
                 <Header courseTitle={courseName} />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
@@ -135,7 +137,7 @@ const VideoClassroomUI = ({ courseName,classCode }) => {
                         <div className="mb-6">
                             <h1 className="text-3xl font-bold text-gray-800 mb-2">{courseName}</h1>
                             <p className="text-gray-600"><p className="text-gray-600">
-  {usercontex.user.role === "teacher" && `Course Id: ${classCode}`}
+
 </p>
 </p>
                         </div>
@@ -193,9 +195,14 @@ const VideoClassroomUI = ({ courseName,classCode }) => {
                 Save Note
               </button>
                        </div>
+                   {  usercontex.user.role=="teacher" &&  <ShareClassroom  inviteCode={classCode}/>}
+
                     </div>
                 </main>
+
+
             </div>
+
         </div>
     );
 };

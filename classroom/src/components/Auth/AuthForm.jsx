@@ -88,6 +88,17 @@ const AuthForm = ({ isLogin }) => {
           // Handle login
           if (isLogin) {
             try {
+
+
+  const handleLoginSuccess = () => {
+    const pendingInviteCode = localStorage.getItem('pendingInviteCode');
+    if (pendingInviteCode) {
+      localStorage.removeItem('pendingInviteCode');
+      navigate(`/join/${pendingInviteCode}`);
+    } else {
+      navigate('/classroom');
+    }
+  };
               response = await login(formData);
               const { token } = response.data;
 

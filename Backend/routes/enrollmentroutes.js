@@ -4,6 +4,45 @@ const Enrollment = require('../models/enrollmentmodel');
 const Course = require('../models/coursemodel');
 const { authenticateToken, authorizeRole } = require('../middleware/authMiddleware');
 
+
+router.post('/join', authenticateToken,authorizeRole(['student', 'teacher']), async (req, res) => {
+    try {
+        console.log("join request called ");
+      const { inviteCode } = req.body;
+      console.log("invite code is ",inviteCode);
+
+      // Find the course with the invite code
+      const course = await Course.findOne({ classCode : inviteCode });
+      console.log("course is ",course);
+      if (!course) {
+        return res.status(404).json({ error: 'Invalid invite code' });
+      }
+
+      // Check if user is already enrolled
+      const existingEnrollment = await Enrollment.findOne({
+        studentId: req.user.userId,
+        courseId: course._id
+      });
+
+      if (existingEnrollment) {
+        return res.status(400).json({ error: 'Already enrolled in this course' });
+      }
+
+      // Create new enrollment
+      const enrollment = new Enrollment({
+        studentId: req.user.userId,
+        courseId: course._id
+      });
+
+      await enrollment.save();
+      res.status(201).json({
+        message: 'Successfully enrolled',
+        courseId: course._id
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
 // Create a new enrollment or enrollments
 router.post('/', async (req, res) => {
 

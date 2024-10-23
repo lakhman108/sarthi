@@ -7,6 +7,7 @@ import useAxiosFetch from '../utils/fetchClasses';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { UserContext } from '../context/Usercontex';
+
 const ClassroomUI = () => {
     const {user}=useContext(UserContext);
     console.log("----------------------")
@@ -67,9 +68,11 @@ const ClassroomUI = () => {
         <main className="p-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {loading ? <Loader /> : courses.map((course, index) => (
+
               <ClassCard
                 role={user.role}
                 key={course._id}
+                inviteCode={course.inviteCode}
                 classCode={course.classCode}
                 _id={course._id}
                 title={course.courseName}
@@ -78,6 +81,8 @@ const ClassroomUI = () => {
                 onDelete={handleDelete}
                 onEdit={handleEdit}
               />
+
+
             ))}
           </div>
         </main>
