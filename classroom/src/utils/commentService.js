@@ -1,6 +1,6 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'https://sarthibackend-production.up.railway.app/api';
 
 export const fetchComments = async (lectureId) => {
     console.log(lectureId)

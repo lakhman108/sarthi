@@ -16,7 +16,7 @@ const ClassroomUI = () => {
     const savedToken = Cookies.get('token');
 
     //   console.log("Saved Token:", savedToken);
-    const { data, loading, error, refetch } = useAxiosFetch('http://localhost:3000/api/courses', {
+    const { data, loading, error, refetch } = useAxiosFetch('https://sarthibackend-production.up.railway.app/api/courses', {
         headers: {
             Authorization: `Bearer ${savedToken}`,
         }
@@ -38,7 +38,7 @@ const ClassroomUI = () => {
     const handleDelete = async (id) => {
         try {
             const savedToken = Cookies.get('token');
-            await axios.delete(`http://localhost:3000/api/courses/${id}`, {
+            await axios.delete(`https://sarthibackend-production.up.railway.app/api/courses/${id}`, {
                 headers: {
                     Authorization: `Bearer ${savedToken}`,
                 },
@@ -51,7 +51,7 @@ const ClassroomUI = () => {
 
     const handleEdit = async (id, newTitle) => {
         try {
-            await axios.patch(`http://localhost:3000/api/courses/${id}`, { courseName: newTitle });
+            await axios.patch(`https://sarthibackend-production.up.railway.app/api/courses/${id}`, { courseName: newTitle });
             setCourses(courses.map(course =>
                 course._id === id ? { ...course, courseName: newTitle } : course
             ));

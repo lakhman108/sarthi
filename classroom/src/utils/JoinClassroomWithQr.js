@@ -21,7 +21,7 @@ const JoinClassroomWithQr = () => {
           return;
         }
 
-        const response = await axios.post('http://localhost:3000/api/enrollments/join',
+        const response = await axios.post('https://sarthibackend-production.up.railway.app/api/enrollments/join',
           { inviteCode },
           {
             headers: {

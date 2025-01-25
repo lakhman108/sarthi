@@ -1,7 +1,7 @@
-import Cookies from 'js-cookie';    
+import Cookies from 'js-cookie';
 export const fetchCourses = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/courses',{
+      const response = await fetch('https://sarthibackend-production.up.railway.app/api/courses',{
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${Cookies.get('token')}`,

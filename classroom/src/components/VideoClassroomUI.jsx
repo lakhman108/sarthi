@@ -10,11 +10,11 @@ import Loader from './layout/Loader';
 import AddTopicModal from './TopicModal/AddTopicModal';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import {  ToastContainer } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import { handleNoteSave } from '../utils/notesService';
 import ShareClassroom from './ShareClassroom';
 
-const VideoClassroomUI = ({ courseName,classCode }) => {
+const VideoClassroomUI = ({ courseName, classCode }) => {
 
     const usercontex = useContext(UserContext);
     const { id } = useParams();
@@ -24,14 +24,14 @@ const VideoClassroomUI = ({ courseName,classCode }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [like, setLike] = useState(false);
     const [note, setNote] = useState('');
-    const [showShare,setShowShare] =useState(false);
+    const [showShare, setShowShare] = useState(false);
 
     const handleLectureSelect = async (index) => {
         setCurrentLectureIndex(index);
         const selectedLecture = lectures[index];
 
         try {
-            await axios.patch(`http://localhost:3000/api/lectures/${selectedLecture._id}/view`);
+            await axios.patch(`https://sarthibackend-production.up.railway.app/api/lectures/${selectedLecture._id}/view`);
             setLectures(prevLectures => prevLectures.map(lecture =>
                 lecture._id === selectedLecture._id
                     ? { ...lecture, noOfViews: lecture.noOfViews + 1 }
@@ -42,30 +42,30 @@ const VideoClassroomUI = ({ courseName,classCode }) => {
         }
     };
 
-  useEffect(() => {
-    // Fetch existing note when component mounts
-    const fetchNote = async () => {
-      try {
-        const response = await axios.get(`http://localhost:3000/api/enrollments/${id}/notes`,
-            {
-                headers: {
-                  Authorization: `Bearer ${Cookies.get('token')}`,
-                },
-              }
-        );
-        setNote(response.data.notes || '');
-      } catch (error) {
-        console.error("Error fetching note:", error);
-      }
-    };
-    fetchNote();
-  }, [id]);
+    useEffect(() => {
+        // Fetch existing note when component mounts
+        const fetchNote = async () => {
+            try {
+                const response = await axios.get(`https://sarthibackend-production.up.railway.app/api/enrollments/${id}/notes`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${Cookies.get('token')}`,
+                        },
+                    }
+                );
+                setNote(response.data.notes || '');
+            } catch (error) {
+                console.error("Error fetching note:", error);
+            }
+        };
+        fetchNote();
+    }, [id]);
 
 
     const fetchLectures = async () => {
         setLoading(true);
         try {
-            const response = await fetch(`http://localhost:3000/api/lectures/course/${id}`);
+            const response = await fetch(`https://sarthibackend-production.up.railway.app/api/lectures/course/${id}`);
             const data = await response.json();
             setLectures(data);
         } catch (error) {
@@ -77,7 +77,7 @@ const VideoClassroomUI = ({ courseName,classCode }) => {
 
     const refreshLecture = async (lectureId) => {
         try {
-            const response = await fetch(`http://localhost:3000/api/lectures/${lectureId}`);
+            const response = await fetch(`https://sarthibackend-production.up.railway.app/api/lectures/${lectureId}`);
             const updatedLecture = await response.json();
             setLectures(prevLectures => prevLectures.map(lecture =>
                 lecture._id === lectureId ? updatedLecture : lecture
@@ -92,7 +92,7 @@ const VideoClassroomUI = ({ courseName,classCode }) => {
         }
         try {
             //console.log(currentLecture);
-            await axios.patch(`http://localhost:3000/api/lectures/${currentLecture._id}/like`);
+            await axios.patch(`https://sarthibackend-production.up.railway.app/api/lectures/${currentLecture._id}/like`);
             setLectures(
                 prevLectures => prevLectures.map(lecture =>
                     lecture._id == currentLecture._id ? { ...lecture, noOfLikes: lecture.noOfLikes + 1 } : lecture
@@ -138,8 +138,8 @@ const VideoClassroomUI = ({ courseName,classCode }) => {
                             <h1 className="text-3xl font-bold text-gray-800 mb-2">{courseName}</h1>
                             <p className="text-gray-600"><p className="text-gray-600">
 
-</p>
-</p>
+                            </p>
+                            </p>
                         </div>
                         <div className="flex flex-col lg:flex-row space-y-6 lg:space-y-0 lg:space-x-6">
                             <div className="lg:w-3/4">
@@ -181,32 +181,32 @@ const VideoClassroomUI = ({ courseName,classCode }) => {
                             </aside>
                         </div>
                         <div className="mt-6">
-              <h3 className="text-xl font-bold mb-2">Course Notes</h3>
-              <textarea
-                className="w-full h-32 p-2 border rounded"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Take notes for this course..."
-              />
-              <button
-                className="mt-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-                onClick={()=>handleNoteSave(id,note)}
-              >
-                Save Note
-              </button>
-                       </div>
-                       {usercontex.user.role === "teacher" && (
-  <div className="mt-4">
-    <button
-      onClick={() => setShowShare(!showShare)}
-      className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-    >
-      {showShare ? 'Hide Share Options' : 'Share Classroom'}
-    </button>
+                            <h3 className="text-xl font-bold mb-2">Course Notes</h3>
+                            <textarea
+                                className="w-full h-32 p-2 border rounded"
+                                value={note}
+                                onChange={(e) => setNote(e.target.value)}
+                                placeholder="Take notes for this course..."
+                            />
+                            <button
+                                className="mt-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+                                onClick={() => handleNoteSave(id, note)}
+                            >
+                                Save Note
+                            </button>
+                        </div>
+                        {usercontex.user.role === "teacher" && (
+                            <div className="mt-4">
+                                <button
+                                    onClick={() => setShowShare(!showShare)}
+                                    className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+                                >
+                                    {showShare ? 'Hide Share Options' : 'Share Classroom'}
+                                </button>
 
-    {showShare && <ShareClassroom inviteCode={classCode} />}
-  </div>
-)}
+                                {showShare && <ShareClassroom inviteCode={classCode} />}
+                            </div>
+                        )}
                     </div>
                 </main>
 

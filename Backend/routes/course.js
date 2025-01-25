@@ -11,6 +11,7 @@ const fs = require('fs/promises');
 
   router.get('/', authenticateToken, authorizeRole(['student', 'teacher']), async (req, res) => {
     try {
+
       // Finding enrollments for the authenticated user
       const enrollments = await Enrollment.find({ studentId: req.user.userId } )
 
@@ -23,6 +24,7 @@ const fs = require('fs/promises');
 
 
      for(let id in courseIds){
+        
         const course=await Course.findById(courseIds[id]).populate('teacherId', 'username');
         courses.push(course);
      }

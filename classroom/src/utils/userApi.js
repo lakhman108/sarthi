@@ -1,6 +1,6 @@
 import axios from 'axios';
 import Cookies  from 'js-cookie';
-const API_URL = 'http://localhost:3000/api/users';
+const API_URL = 'https://sarthibackend-production.up.railway.app/api/users';
 
 export const updateUserName = async (userId, newName) => {
   const response = await axios.patch(`${API_URL}/${userId}`, { username: newName },{
