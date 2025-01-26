@@ -8,7 +8,6 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { UserProvider } from "./context/Usercontex";
 import { SidebarProvider } from './context/SidebarContext';
-import { Analytics } from '@vercel/analytics/react';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -21,7 +20,7 @@ root.render(
         </Router>
       </SidebarProvider>
     </UserProvider>
-    <Analytics/>
+  
   </React.StrictMode>
 );
 
