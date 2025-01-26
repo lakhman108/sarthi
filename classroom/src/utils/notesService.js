@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
 
 export const handleNoteSave = async (id,note) => {
     try {
-      await axios.patch(`https://sarthibackend-production.up.railway.app/api/enrollments/${id}/notes`, { "notes":note }, {
+      await axios.patch(`https://superb-insight-production.up.railway.app/api/enrollments/${id}/notes`, { "notes":note }, {
         headers: {
           Authorization: `Bearer ${Cookies.get('token')}`,
         },

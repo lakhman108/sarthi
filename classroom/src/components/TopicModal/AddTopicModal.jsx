@@ -15,8 +15,8 @@ const AddTopicModal = ({ isOpen, onClose, courseId, onTopicAdded }) => {
     const [uploadProgress, setUploadProgress] = useState(0);
     const [error, setError] = useState('');
 
-    const uploadVideoUrl = 'https://sarthibackend-production.up.railway.app/api/upload';
-    const createLectureUrl = 'https://sarthibackend-production.up.railway.app/api/lectures';
+    const uploadVideoUrl = 'https://superb-insight-production.up.railway.app/api/upload';
+    const createLectureUrl = 'https://superb-insight-production.up.railway.app/api/lectures';
 
     const handleFileChange = (e) => {
         setFile(e.target.files[0]);

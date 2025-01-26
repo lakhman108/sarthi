@@ -10,7 +10,7 @@ const addclass=(classname,teacherid,semester) =>{
     const savedtoken=Cookies.get('token');
 
 console.log(body);
-axios.post('https://sarthibackend-production.up.railway.app/api/courses',body,{
+axios.post('https://superb-insight-production.up.railway.app/api/courses',body,{
     headers:{
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${savedtoken}`

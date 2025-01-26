@@ -9,7 +9,7 @@ import VideoClassroomUI from "./VideoClassroomUI";
 
 const Classui = () => {
     const { id } = useParams(); // Get the 'id' parameter from the URL
-    const data = useFetch(`https://sarthibackend-production.up.railway.app/api/courses/${id}`); // Use the 'id' parameter in your fetch
+    const data = useFetch(`https://superb-insight-production.up.railway.app/api/courses/${id}`); // Use the 'id' parameter in your fetch
     const classCode = data?.classCode;
     console.log(data);
     return (

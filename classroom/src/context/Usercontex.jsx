@@ -14,7 +14,7 @@ export const UserProvider = (props) => {
         const checkAuthStatus = async () => {
             if (savedToken) {
                 try {
-                    const response = await axios.get('https://sarthibackend-production.up.railway.app/api/users', {
+                    const response = await axios.get('https://superb-insight-production.up.railway.app/api/users', {
                         headers: {
                             Authorization: `Bearer ${savedToken}`,
                         },

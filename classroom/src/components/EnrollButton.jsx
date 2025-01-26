@@ -9,7 +9,7 @@ const EnrollButton = ({ courseId }) => {
     const handleEnroll = async () => {
         try {
             console.log(user);
-            await axios.post('https://sarthibackend-production.up.railway.app/api/enrollments', {
+            await axios.post('https://superb-insight-production.up.railway.app/api/enrollments', {
                 studentId: user._id,
                 courseId: courseId
             });

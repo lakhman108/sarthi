@@ -31,7 +31,7 @@ const VideoClassroomUI = ({ courseName, classCode }) => {
         const selectedLecture = lectures[index];
 
         try {
-            await axios.patch(`https://sarthibackend-production.up.railway.app/api/lectures/${selectedLecture._id}/view`);
+            await axios.patch(`https://superb-insight-production.up.railway.app/api/lectures/${selectedLecture._id}/view`);
             setLectures(prevLectures => prevLectures.map(lecture =>
                 lecture._id === selectedLecture._id
                     ? { ...lecture, noOfViews: lecture.noOfViews + 1 }
@@ -46,7 +46,7 @@ const VideoClassroomUI = ({ courseName, classCode }) => {
         // Fetch existing note when component mounts
         const fetchNote = async () => {
             try {
-                const response = await axios.get(`https://sarthibackend-production.up.railway.app/api/enrollments/${id}/notes`,
+                const response = await axios.get(`https://superb-insight-production.up.railway.app/api/enrollments/${id}/notes`,
                     {
                         headers: {
                             Authorization: `Bearer ${Cookies.get('token')}`,
@@ -65,7 +65,7 @@ const VideoClassroomUI = ({ courseName, classCode }) => {
     const fetchLectures = async () => {
         setLoading(true);
         try {
-            const response = await fetch(`https://sarthibackend-production.up.railway.app/api/lectures/course/${id}`);
+            const response = await fetch(`https://superb-insight-production.up.railway.app/api/lectures/course/${id}`);
             const data = await response.json();
             setLectures(data);
         } catch (error) {
@@ -77,7 +77,7 @@ const VideoClassroomUI = ({ courseName, classCode }) => {
 
     const refreshLecture = async (lectureId) => {
         try {
-            const response = await fetch(`https://sarthibackend-production.up.railway.app/api/lectures/${lectureId}`);
+            const response = await fetch(`https://superb-insight-production.up.railway.app/api/lectures/${lectureId}`);
             const updatedLecture = await response.json();
             setLectures(prevLectures => prevLectures.map(lecture =>
                 lecture._id === lectureId ? updatedLecture : lecture
@@ -92,7 +92,7 @@ const VideoClassroomUI = ({ courseName, classCode }) => {
         }
         try {
             //console.log(currentLecture);
-            await axios.patch(`https://sarthibackend-production.up.railway.app/api/lectures/${currentLecture._id}/like`);
+            await axios.patch(`https://superb-insight-production.up.railway.app/api/lectures/${currentLecture._id}/like`);
             setLectures(
                 prevLectures => prevLectures.map(lecture =>
                     lecture._id == currentLecture._id ? { ...lecture, noOfLikes: lecture.noOfLikes + 1 } : lecture

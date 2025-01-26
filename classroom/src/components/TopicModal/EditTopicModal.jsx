@@ -16,8 +16,8 @@ const EditTopicModal = ({ isOpen, onClose, lecture, onLectureEdited }) => {
     const [error, setError] = useState('');
     const [videoAction, setVideoAction] = useState('keep'); // 'keep', 'delete', or 'update'
 
-    const uploadVideoUrl = 'https://sarthibackend-production.up.railway.app/api/upload';
-    const updateLectureUrl = 'https://sarthibackend-production.up.railway.app/api/lecture';
+    const uploadVideoUrl = 'https://superb-insight-production.up.railway.app/api/upload';
+    const updateLectureUrl = 'https://superb-insight-production.up.railway.app/api/lecture';
 
     const handleFileChange = (e) => {
         setFile(e.target.files[0]);
@@ -57,7 +57,7 @@ const EditTopicModal = ({ isOpen, onClose, lecture, onLectureEdited }) => {
                 videoLink: videoLink,
             };
 
-            await axios.patch(`https://sarthibackend-production.up.railway.app/api/lectures/${lecture._id}/update`, lectureData);
+            await axios.patch(`https://superb-insight-production.up.railway.app/api/lectures/${lecture._id}/update`, lectureData);
             onLectureEdited();
             onClose();
         } catch (err) {

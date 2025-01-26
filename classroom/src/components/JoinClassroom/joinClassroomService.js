@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://sarthibackend-production.up.railway.app/api/enrollments';
+const API_URL = 'https://superb-insight-production.up.railway.app/api/enrollments';
 
 export const joinClassroom = async (userId, classCode) => {
   try {

@@ -107,7 +107,7 @@ const AuthForm = ({ isLogin }) => {
 
                     // Fetch user data with the token
                     await axios
-                        .get('https://sarthibackend-production.up.railway.app/api/users', {
+                        .get('https://superb-insight-production.up.railway.app/api/users', {
                             headers: { Authorization: `Bearer ${token}` },
                         })
                         .then((response) => {

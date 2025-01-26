@@ -1,6 +1,6 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
-const API_URL = 'https://sarthibackend-production.up.railway.app/api';
+const API_URL = 'https://superb-insight-production.up.railway.app/api';
 
 export const fetchComments = async (lectureId) => {
     console.log(lectureId)

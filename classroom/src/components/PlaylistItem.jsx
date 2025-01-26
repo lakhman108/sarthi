@@ -80,7 +80,7 @@ const PlaylistItem = ({ lecture, isActive, onClick, onLectureDeleted, onLectureE
     const handleDeleteConfirm = async () => {
         dispatch({ type: START_DELETING });
         try {
-            const response = await axios.delete(`https://sarthibackend-production.up.railway.app/api/lectures/${lecture._id}`);
+            const response = await axios.delete(`https://superb-insight-production.up.railway.app/api/lectures/${lecture._id}`);
             if (response.data.message === "Lecture deleted") {
                 onLectureDeleted(lecture._id);
             }
