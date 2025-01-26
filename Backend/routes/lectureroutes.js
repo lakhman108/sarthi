@@ -40,7 +40,7 @@ router.delete("/:id", async (req, res) => {
 
 		const str = lecture.videoLink;
 		const finalString = str
-			.replace("http://localhost:3000/api", "public")
+			.replace(`${process.env.HOST}/api`, "public")
 			.replace("master.m3u8", "");
 		fs.rm(finalString, { recursive: true, force: true }, (err) => {
 			if (err) {

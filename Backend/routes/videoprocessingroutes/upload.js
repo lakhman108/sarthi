@@ -86,7 +86,7 @@ EOF
 
     res.status(200).json({
       message: 'HLS generated successfully',
-      masterPlaylist: `http://localhost:3000/api/hls/${videoName}/master.m3u8`,
+      masterPlaylist: `${process.env.HOST}/api/hls/${videoName}/master.m3u8`,
     });
   });
 });

@@ -7,7 +7,13 @@ const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 3000;
 const path = require('path');
-app.use(cors());
+const coreOptions = {
+  origin: 'https://sarthi-nu.vercel.app',
+  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+};
+app.use(cors(
+
+));
 // Connect to MongoDB
 const uri = process.env.MONGODB_URI;
 mongoose.connect(uri);

@@ -160,7 +160,7 @@ router.delete('/:id', authenticateToken, authorizeRole(['student', 'teacher']),a
       for (const lecture of lectures) {
         const str = lecture.videoLink;
         const finalString = str
-          .replace("http://localhost:3000/api", "public")
+          .replace("${process.env.HOST}/api", "public")
           .replace("master.m3u8", "");
 
         try {
