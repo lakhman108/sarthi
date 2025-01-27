@@ -20,7 +20,8 @@ const initialState = {
   quality: '-1',
   showControls: true,
   error: null,
-  retryCount: 0
+  retryCount: 0,
+  ended: false
 };
 
 const formatTime = (time) => {
@@ -33,8 +34,10 @@ const reducer = (state, action) => {
   switch (action.type) {
     case 'RESET':
       return { ...initialState, retryCount: state.retryCount };
-    case 'TOGGLE_PLAY':
-      return { ...state, isPlaying: !state.isPlaying };
+    case 'SET_PLAYING':
+      return { ...state, isPlaying: action.payload };
+    case 'SET_ENDED':
+      return { ...state, ended: action.payload };
     case 'TOGGLE_MUTE':
       return { ...state, isMuted: !state.isMuted };
     case 'TOGGLE_FULLSCREEN':
@@ -147,12 +150,32 @@ const VideoPlayer = ({ videoLink }) => {
       dispatch({ type: 'SET_DURATION', payload: video.duration });
     };
 
+    const handlePlay = () => {
+      dispatch({ type: 'SET_PLAYING', payload: true });
+      dispatch({ type: 'SET_ENDED', payload: false });
+    };
+
+    const handlePause = () => {
+      dispatch({ type: 'SET_PLAYING', payload: false });
+    };
+
+    const handleEnded = () => {
+      dispatch({ type: 'SET_ENDED', payload: true });
+      dispatch({ type: 'SET_PLAYING', payload: false });
+    };
+
     video.addEventListener('timeupdate', handleTimeUpdate);
     video.addEventListener('loadedmetadata', handleLoadedMetadata);
+    video.addEventListener('play', handlePlay);
+    video.addEventListener('pause', handlePause);
+    video.addEventListener('ended', handleEnded);
 
     return () => {
       video.removeEventListener('timeupdate', handleTimeUpdate);
       video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      video.removeEventListener('play', handlePlay);
+      video.removeEventListener('pause', handlePause);
+      video.removeEventListener('ended', handleEnded);
     };
   }, []);
 
@@ -160,14 +183,21 @@ const VideoPlayer = ({ videoLink }) => {
     const video = videoRef.current;
     if (!video) return;
 
-    if (video.paused || video.ended) {
+    if (state.ended) {
+      video.currentTime = 0;
+      video.play().catch(error => {
+        dispatch({ type: 'SET_ERROR', payload: `Playback Error: ${error.message}` });
+      });
+      return;
+    }
+
+    if (video.paused) {
       video.play().catch(error => {
         dispatch({ type: 'SET_ERROR', payload: `Playback Error: ${error.message}` });
       });
     } else {
       video.pause();
     }
-    dispatch({ type: 'TOGGLE_PLAY' });
   };
 
   const toggleMute = () => {
@@ -222,32 +252,23 @@ const VideoPlayer = ({ videoLink }) => {
     const wasPlaying = !video.paused;
 
     if (hlsRef.current) {
-      // Store current time before quality switch
       const currentTime = video.currentTime;
-
-      // Pause video temporarily during quality switch
       video.pause();
 
-      hlsRef.current.currentLevel = parseInt(quality);
-
-      // Wait for level switch to complete
-      hlsRef.current.on(Hls.Events.LEVEL_SWITCHED, () => {
-        // Restore playback position
+      hlsRef.current.once(Hls.Events.LEVEL_SWITCHED, () => {
         video.currentTime = currentTime;
-
-        // Resume playback if video was playing before
         if (wasPlaying) {
           video.play().catch(error => {
-            console.error('Error resuming playback:', error);
             dispatch({ type: 'SET_ERROR', payload: `Playback Error: ${error.message}` });
           });
         }
       });
+
+      hlsRef.current.currentLevel = parseInt(quality);
     }
 
     dispatch({ type: 'SET_QUALITY', payload: quality });
   };
-
 
   const handleMouseMove = () => {
     dispatch({ type: 'SHOW_CONTROLS' });
@@ -301,7 +322,7 @@ const Controls = ({ state, togglePlayPause, toggleMute, toggleFullscreen, seek, 
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <button onClick={togglePlayPause} className="text-white px-2 focus:outline-none">
-            <FontAwesomeIcon icon={state.isPlaying ? faPause : faPlay} />
+            <FontAwesomeIcon icon={state.ended ? faRotateRight : (state.isPlaying ? faPause : faPlay)} />
           </button>
           <button onClick={toggleMute} className="text-white px-2 focus:outline-none">
             <FontAwesomeIcon icon={state.isMuted ? faVolumeMute : faVolumeUp} />

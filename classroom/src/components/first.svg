@@ -1,0 +1,65 @@
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .container { stroke: #4a5568; fill: #2d3748; rx: 5; }
+    .text { fill: #fff; font-size: 12px; }
+    .arrow { stroke: #48bb78; stroke-width: 2; }
+    .component { fill: #4299e1; }
+    .state { fill: #48bb78; }
+    .error { fill: #f56565; }
+    .hls { fill: #9f7aea; }
+  </style>
+
+  <!-- Main Components -->
+  <rect x="50" y="50" width="700" height="400" class="container"/>
+  <text x="70" y="80" class="text">Video Player Architecture</text>
+
+  <!-- Video Element -->
+  <rect x="100" y="120" width="300" height="180" class="component"/>
+  <text x="120" y="140" class="text">Video Element</text>
+  <text x="120" y="160" class="text">- HLS.js integration</text>
+  <text x="120" y="180" class="text">- Native fallback</text>
+
+  <!-- Controls -->
+  <rect x="100" y="320" width="300" height="80" class="component"/>
+  <text x="120" y="340" class="text">Controls Component</text>
+  <text x="120" y="360" class="text">- Play/Pause/Replay</text>
+  <text x="120" y="380" class="text">- Volume, Fullscreen, Progress</text>
+
+  <!-- State Management -->
+  <rect x="450" y="120" width="250" height="150" class="state"/>
+  <text x="470" y="140" class="text">State Manager (useReducer)</text>
+  <text x="470" y="160" class="text">- isPlaying: boolean</text>
+  <text x="470" y="180" class="text">- currentTime: number</text>
+  <text x="470" y="200" class="text">- quality: string</text>
+  <text x="470" y="220" class="text">- error: string|null</text>
+
+  <!-- Error Handling -->
+  <rect x="450" y="290" width="250" height="110" class="error"/>
+  <text x="470" y="310" class="text">Error Handling</text>
+  <text x="470" y="330" class="text">- Network errors</text>
+  <text x="470" y="350" class="text">- Media errors</text>
+  <text x="470" y="370" class="text">- Retry mechanism</text>
+
+  <!-- HLS.js System -->
+  <rect x="450" y="420" width="250" height="80" class="hls"/>
+  <text x="470" y="440" class="text">HLS.js System</text>
+  <text x="470" y="460" class="text">- Adaptive bitrate</text>
+  <text x="470" y="480" class="text">- Quality switching</text>
+
+  <!-- Data Flow Arrows -->
+  <path d="M410 210 L450 180" class="arrow" marker-end="url(#arrowhead)"/>
+  <path d="M410 240 L450 240" class="arrow" marker-end="url(#arrowhead)"/>
+  <path d="M410 270 L450 300" class="arrow" marker-end="url(#arrowhead)"/>
+  <path d="M750 460 L650 400" class="arrow" marker-end="url(#arrowhead)"/>
+
+  <!-- Legend -->
+  <rect x="50" y="480" width="700" height="100" class="container"/>
+  <text x="70" y="500" class="text">Key Features:</text>
+  <text x="100" y="520" class="text">1. Adaptive Quality Switching with position retention</text>
+  <text x="100" y="540" class="text">2. Error recovery with 3 retry attempts</text>
+  <text x="100" y="560" class="text">3. Full state synchronization between UI and video element</text>
+
+  <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+    <polygon points="0 0, 10 3.5, 0 7" fill="#48bb78"/>
+  </marker>
+</svg>

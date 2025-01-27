@@ -3,8 +3,10 @@ import React, { useContext, useState } from "react";
 import { UserContext } from "../../context/Usercontex";
 import ClassModal from "../createnewclass/ClassModal";
 import JoinClassroomModal from "../JoinClassroom/JoinClassroomModal";
+import { useNavigate } from "react-router-dom";
 
 const Header = ({ refresh }) => {
+    const navigate=useNavigate();
   const usercontex = useContext(UserContext);
 //   console.log(usercontex);
   const [isCreateClassModalOpen, setIsCreateClassModalOpen] = useState(false);
@@ -51,11 +53,15 @@ const Header = ({ refresh }) => {
           onClose={() => setIsJoinClassModalOpen(false)}
           onJoinSuccess={handleJoinSuccess}
         />
+        <button onClick={()=>{navigate('/settings')}}>
         <img
+
           className="w-8 h-8 rounded-full"
           src={usercontex.user.profilePictureImageLink}
           alt="User Profile"
         />
+        </button>
+
       </div>
     </header>
   );

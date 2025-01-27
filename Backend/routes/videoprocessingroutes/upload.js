@@ -6,52 +6,82 @@ const fs = require('fs');
 
 const app = express.Router();
 let videoName;
-// Storage engine for multer
-//we need to give the destination where the file will be stored
+
+/**
+ * Sanitize filename by:
+ * - Removing special characters
+ * - Converting to lowercase
+ * - Replacing spaces with hyphens
+ */
+const sanitizeFileName = (fileName) => {
+  return fileName
+    .toLowerCase()
+    .replace(/\s+/g, '-')        // Replace spaces with hyphens
+    .replace(/[^a-z0-9-]/g, '')  // Remove special characters
+    .replace(/-+/g, '-')         // Replace multiple hyphens with single
+    .replace(/^-+|-+$/g, '');    // Remove leading/trailing hyphens
+};
+
+// Storage engine configuration
 const storageEngine = multer.diskStorage({
   destination: './public/uploads/',
   filename: function (req, file, callback) {
-    callback(
-      null,
-      file.originalname // Using original file name for folder creation
-    );
+    // Sanitize filename before saving
+    const sanitizedName = sanitizeFileName(file.originalname);
+    console.log('Original filename:', file.originalname);
+    console.log('Sanitized filename:', sanitizedName);
+    callback(null, sanitizedName);
   },
 });
 
-//  File filter for video files
-//  in this file filter we are checking the file extension and if it is not mp4, MOV, m4v
-// then we are throwing an error
+// File filter for video validation
 const fileFilter = (req, file, callback) => {
-  let pattern = /mp4|MOV|m4v/; // regex for video files
-  if (pattern.test(path.extname(file.originalname))) {
-    //in callback we are checking if the file is video file or not
+  const validTypes = /mp4|MOV|m4v/;
+  const isValid = validTypes.test(path.extname(file.originalname));
+  console.log('File validation:', {
+    originalName: file.originalname,
+    mimeType: file.mimetype,
+    isValid
+  });
+
+  if (isValid) {
     callback(null, true);
   } else {
-    callback('Error: not a valid file');
+    callback(new Error('Invalid file type. Only MP4, MOV, M4V allowed'));
   }
 };
 
-// Initialize multer and providing storage engine and file filter
+// Initialize multer
 const upload = multer({
   storage: storageEngine,
   fileFilter: fileFilter,
 });
 
-// Routing for video upload and HLS generation
+// Video upload and HLS generation route
 app.post('/', upload.single('uploadedFile'), (req, res) => {
-    console.log(req.file);
-  const filePath = req.file.path;
-  console.log(filePath);
-  // Get video name without extension like without .mp4 ...
- videoName = path.parse(req.file.originalname).name;
- //making the output directory path
-  const outputDir = `./public/hls/${videoName}`;
-  // Resolutions for HLS
-  const resolutions = ['240p', '360p', '720p'];
+  try {
+    if (!req.file) {
+      console.error('No file uploaded');
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
 
-  // Creating main directory for the video
-  //recursive is true so that it will create the directory if it is not present
-  fs.mkdirSync(outputDir, { recursive: true });
+    const filePath = req.file.path;
+    console.log('Uploaded file path:', filePath);
+
+    // Sanitize video name for folder creation
+    videoName = sanitizeFileName(path.parse(req.file.originalname).name);
+    console.log('Processed video name:', videoName);
+
+    const outputDir = `./public/hls/${videoName}`;
+    const resolutions = ['240p', '360p', '720p'];
+
+    // Create directories
+    fs.mkdirSync(outputDir, { recursive: true });
+    resolutions.forEach(res => {
+      const resPath = `${outputDir}/${res}`;
+      fs.mkdirSync(resPath, { recursive: true });
+      console.log(`Created resolution directory: ${resPath}`);
+    });
 
   // Generate subdirectories for each resolution
   resolutions.forEach(res => fs.mkdirSync(`${outputDir}/${res}`, { recursive: true }));
@@ -75,22 +105,36 @@ EOF
 
 // This command is using a 'here document' (<<EOF) to create or overwrite a file. The `cat <<EOF` tells the shell to take all lines between '<<EOF' and 'EOF' and write them to a file.
 
-  exec(ffmpegCommand, (error, stdout, stderr) => {
+exec(ffmpegCommand, (error, stdout, stderr) => {
     if (error) {
-      console.error(`Error generating HLS: ${stderr}`);
-      return res.status(500).send('Error processing video');
+      console.error('FFmpeg error:', error);
+      console.error('FFmpeg stderr:', stderr);
+      return res.status(500).json({
+        error: 'Error processing video',
+        details: stderr
+      });
     }
 
-    // Delete original video after HLS is created
+    console.log('HLS generation completed successfully');
+
+    // Delete original file
     fs.unlinkSync(filePath);
+    console.log('Deleted original file:', filePath);
 
     res.status(200).json({
       message: 'HLS generated successfully',
       masterPlaylist: `${process.env.HOST}/api/hls/${videoName}/master.m3u8`,
+      processedFileName: videoName
     });
   });
+
+} catch (error) {
+  console.error('Upload processing error:', error);
+  res.status(500).json({
+    error: 'Server error while processing upload',
+    message: error.message
+  });
+}
 });
-
-
 
 module.exports = app;
