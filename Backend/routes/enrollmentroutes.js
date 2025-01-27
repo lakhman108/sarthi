@@ -4,137 +4,160 @@ const Enrollment = require('../models/enrollmentmodel');
 const Course = require('../models/coursemodel');
 const { authenticateToken, authorizeRole } = require('../middleware/authMiddleware');
 
-
-router.post('/join', authenticateToken,authorizeRole(['student', 'teacher']), async (req, res) => {
+router.post('/join', authenticateToken, authorizeRole(['student', 'teacher']), async (req, res) => {
     try {
-        console.log("join request called ");
-      const { inviteCode } = req.body;
-      console.log("invite code is ",inviteCode);
+        console.log(`[AUTH] User ${req.user.userId} attempting to join course`);
+        const { inviteCode } = req.body;
+        console.log(`[ENROLL] Processing invite code: ${inviteCode}`);
 
-      // Find the course with the invite code
-      const course = await Course.findOne({ classCode : inviteCode });
-      console.log("course is ",course);
-      if (!course) {
-        return res.status(404).json({ error: 'Invalid invite code' });
-      }
+        const course = await Course.findOne({ classCode: inviteCode });
+        console.log(`[DB] Course lookup result for code ${inviteCode}:`, course ? course._id : 'not found');
 
-      // Check if user is already enrolled
-      const existingEnrollment = await Enrollment.findOne({
-        studentId: req.user.userId,
-        courseId: course._id
-      });
+        if (!course) {
+            console.log(`[ERROR] Invalid invite code: ${inviteCode}`);
+            return res.status(404).json({ error: 'Invalid invite code' });
+        }
 
-      if (existingEnrollment) {
-        return res.status(400).json({ error: 'Already enrolled in this course' });
-      }
+        const existingEnrollment = await Enrollment.findOne({
+            studentId: req.user.userId,
+            courseId: course._id
+        });
+        console.log(`[DB] Existing enrollment check:`, existingEnrollment ? 'found' : 'not found');
 
-      // Create new enrollment
-      const enrollment = new Enrollment({
-        studentId: req.user.userId,
-        courseId: course._id
-      });
+        if (existingEnrollment) {
+            console.log(`[ENROLL] User ${req.user.userId} already enrolled in course ${course._id}`);
+            return res.status(400).json({ error: 'Already enrolled in this course' });
+        }
 
-      await enrollment.save();
-      res.status(201).json({
-        message: 'Successfully enrolled',
-        courseId: course._id
-      });
+        const enrollment = new Enrollment({
+            studentId: req.user.userId,
+            courseId: course._id
+        });
+
+        await enrollment.save();
+        console.log(`[DB] New enrollment created: ${enrollment._id}`);
+
+        res.status(201).json({
+            message: 'Successfully enrolled',
+            courseId: course._id
+        });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+        console.error(`[ERROR] Course join failed:`, error);
+        res.status(500).json({ error: error.message });
     }
-  });
-// Create a new enrollment or enrollments
-router.post('/', async (req, res) => {
-
-  try{
-    const payload={
-        studentId:req.body.studentId
-    };
-    const course=await Course.findOne({classCode:req.body.classCode});
-    console.log(course);
-
-    payload.courseId=course._id;
-
-    const enrollment=new Enrollment(payload);
-    const response=await enrollment.save();
-    console.log("\n\n\n")
-    console.log(response);
-    console.log("\n\n\n")
-
-    res.status(201).json(response);
-  }
-catch(error){
-  res.status(500).json({ error: error.message });
-}
-
 });
 
-// Get all enrollments
+router.post('/', async (req, res) => {
+    try {
+        console.log(`[ENROLL] Creating enrollment with class code: ${req.body.classCode}`);
+
+        const course = await Course.findOne({ classCode: req.body.classCode });
+        console.log(`[DB] Found course:`, course ? course._id : 'not found');
+
+        const payload = {
+            studentId: req.body.studentId,
+            courseId: course._id
+        };
+
+        const enrollment = new Enrollment(payload);
+        const response = await enrollment.save();
+        console.log(`[DB] Enrollment created: ${response._id}`);
+
+        res.status(201).json(response);
+    } catch (error) {
+        console.error(`[ERROR] Create enrollment failed:`, error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 router.get('/', async (req, res) => {
     try {
+        console.log(`[DB] Fetching all enrollments`);
         const enrollments = await Enrollment.find().populate('studentId courseId lecturesWatched.lectureId');
+        console.log(`[DB] Found ${enrollments.length} enrollments`);
         res.json(enrollments);
     } catch (error) {
+        console.error(`[ERROR] Fetch enrollments failed:`, error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// Get a specific enrollment by ID
 router.get('/:id', async (req, res) => {
     try {
-        const enrollment = await Enrollment.find({studentId:req.params.id}).populate('studentId courseId lecturesWatched.lectureId');
+        console.log(`[DB] Fetching enrollments for student: ${req.params.id}`);
+        const enrollment = await Enrollment.find({studentId:req.params.id})
+            .populate('studentId courseId lecturesWatched.lectureId');
+        console.log(`[DB] Found ${enrollment ? enrollment.length : 0} enrollments`);
 
-        if (!enrollment) return res.status(404).json({ error: 'Enrollment not found' });
+        if (!enrollment) {
+            console.log(`[DB] No enrollments found for student: ${req.params.id}`);
+            return res.status(404).json({ error: 'Enrollment not found' });
+        }
         res.json(enrollment);
     } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-//get notes of enrrollment
-router.get('/:id/notes',authenticateToken, authorizeRole(['student', 'teacher']), async (req, res) => {
-    try {
-        console.log("\n\n\n")
-        console.log("finding enrolled classes notes");
-        console.log("\n\n\n")
-        const enrollment = await Enrollment.findOne({studentId: req.user.userId,courseId: req.params.id});
-        if (!enrollment) return res.status(404).json({ error: 'Enrollment not found' });
-        res.json(enrollment);
-    } catch (error) {
+        console.error(`[ERROR] Fetch enrollment failed:`, error);
         res.status(500).json({ error: error.message });
     }
 });
 
-
-// Update an enrollment by ID
-router.patch('/:id', async (req, res) => {
+router.get('/:id/notes', authenticateToken, authorizeRole(['student', 'teacher']), async (req, res) => {
     try {
-        const enrollment = await Enrollment.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-        if (!enrollment) return res.status(404).json({ error: 'Enrollment not found' });
+        console.log(`[AUTH] User ${req.user.userId} requesting notes for course ${req.params.id}`);
+        console.log(`[NOTES] Fetching enrollment notes`);
+
+        const enrollment = await Enrollment.findOne({
+            studentId: req.user.userId,
+            courseId: req.params.id
+        });
+        console.log(`[DB] Enrollment lookup result:`, enrollment ? 'found' : 'not found');
+
+        if (!enrollment) {
+            console.log(`[ERROR] No enrollment found for user ${req.user.userId} in course ${req.params.id}`);
+            return res.status(404).json({ error: 'Enrollment not found' });
+        }
         res.json(enrollment);
     } catch (error) {
+        console.error(`[ERROR] Fetch notes failed:`, error);
         res.status(500).json({ error: error.message });
     }
 });
-//to save notes
-router.patch('/:id/notes',authenticateToken, authorizeRole(['student', 'teacher']), async (req, res) => {
+
+router.patch('/:id/notes', authenticateToken, authorizeRole(['student', 'teacher']), async (req, res) => {
     try {
-        const enrollment = await Enrollment.findOne({studentId: req.user.userId,courseId: req.params.id});
-        enrollment.notes=req.body.notes;
+        console.log(`[AUTH] User ${req.user.userId} updating notes for course ${req.params.id}`);
+        console.log(`[NOTES] Updating notes content`);
+
+        const enrollment = await Enrollment.findOne({
+            studentId: req.user.userId,
+            courseId: req.params.id
+        });
+        console.log(`[DB] Found enrollment to update:`, enrollment ? enrollment._id : 'not found');
+
+        enrollment.notes = req.body.notes;
         const updatedEnrollment = await enrollment.save();
-        if (!updatedEnrollment) return res.status(404).json({ error: 'Enrollment not found' });
+        console.log(`[DB] Notes updated for enrollment: ${updatedEnrollment._id}`);
+
         res.json(updatedEnrollment);
     } catch (error) {
+        console.error(`[ERROR] Update notes failed:`, error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// Delete an enrollment by ID
 router.delete('/:id', async (req, res) => {
     try {
+        console.log(`[DB] Attempting to delete enrollment: ${req.params.id}`);
         const enrollment = await Enrollment.findByIdAndDelete(req.params.id);
-        if (!enrollment) return res.status(404).json({ error: 'Enrollment not found' });
+
+        if (!enrollment) {
+            console.log(`[ERROR] Enrollment not found: ${req.params.id}`);
+            return res.status(404).json({ error: 'Enrollment not found' });
+        }
+
+        console.log(`[DB] Successfully deleted enrollment: ${req.params.id}`);
         res.status(200).json({ message: 'Enrollment deleted' });
     } catch (error) {
+        console.error(`[ERROR] Delete enrollment failed:`, error);
         res.status(500).json({ error: error.message });
     }
 });

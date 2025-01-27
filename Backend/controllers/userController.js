@@ -38,7 +38,7 @@ const uploadProfilePicture = (req, res) => {
         } else {
           console.log("File uploaded successfully:", req.file);
           const fileUrl = `${process.env.HOST}/api/hls/profilePictures/${req.file.filename}`;
-        //   console.log("Generated file URL:", fileUrl);
+          console.log("Generated file URL:", fileUrl);
           resolve(fileUrl);
         }
       });

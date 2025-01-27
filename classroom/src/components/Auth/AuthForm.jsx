@@ -7,7 +7,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { UserContext } from '../../context/Usercontex';
 import axios from 'axios';
-import config from '../../config/config';
+
 
 const InputField = ({ icon: Icon, ...props }) => (
     <div className="mb-4">
@@ -62,6 +62,7 @@ const SelectField = ({ ...props }) => (
 );
 
 
+
 const AuthForm = ({ isLogin }) => {
     const { setUser, setIsAuthenticated } = useContext(UserContext);
     const [showPassword, setShowPassword] = useState(false);
@@ -71,88 +72,66 @@ const AuthForm = ({ isLogin }) => {
         password: '',
         role: 'student'
     });
-
     const navigate = useNavigate();
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    const handleLoginSuccess = (token, user) => {
+        setIsAuthenticated(true);
+        setUser(user);
+        Cookies.set('token', token, { expires: 7 });
+
+        const pendingInviteCode = localStorage.getItem('pendingInviteCode');
+        if (pendingInviteCode) {
+            localStorage.removeItem('pendingInviteCode');
+            toast.success('Login successful! Redirecting to join classroom...');
+            setTimeout(() => navigate(`/join/${pendingInviteCode}`), 1500);
+        } else {
+            toast.success('Login successful!');
+            setTimeout(() => navigate('/classroom'), 1500);
+        }
+    };
+
+    const fetchUserData = async (token) => {
+        try {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/users`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            return response.data;
+        } catch (error) {
+            throw new Error('Error fetching user data');
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         try {
-            let response;
-
-            // Handle login
             if (isLogin) {
-                try {
-
-
-                    const handleLoginSuccess = () => {
-                        const pendingInviteCode = localStorage.getItem('pendingInviteCode');
-                        if (pendingInviteCode) {
-                            localStorage.removeItem('pendingInviteCode');
-                            navigate(`/join/${pendingInviteCode}`);
-                        } else {
-                            navigate('/classroom');
-                        }
-                    };
-                    response = await login(formData);
-                    const { token } = response.data;
-
-                    // Save token in cookies
-                    Cookies.set('token', token, { expires: 7 });
-
-                    // Fetch user data with the token
-                    await axios
-                        .get(`${process.env.REACT_APP_API_URL}/api/users`, {
-                            headers: { Authorization: `Bearer ${token}` },
-                        })
-                        .then((response) => {
-                            const user = response.data;
-                            setIsAuthenticated(true);
-                            setUser(user);
-                        })
-                        .catch((error) => {
-                            console.error('Error fetching user data:', error);
-                            toast.error('Error fetching user data. Please try again.');
-                        });
-
-                    // Display success message and navigate to classroom
-                    toast.success('Login successful!');
-                    setTimeout(() => navigate('/classroom'), 2000);
-                } catch (error) {
-                    handleError(error, 'Login failed. Please try again.');
-                }
-
-                // Handle registration
+                const loginResponse = await login(formData);
+                const { token } = loginResponse.data;
+                const user = await fetchUserData(token);
+                handleLoginSuccess(token, user);
             } else {
-                try {
-                    response = await register(formData);
-
-                    if (response.status === 201) {
-                        toast.success('Registration successful! Please log in.');
-                        setTimeout(() => navigate('/login'), 3000);
-                    }
-                } catch (error) {
-                    handleError(error, 'Registration failed. Please try again.');
+                const registerResponse = await register(formData);
+                if (registerResponse.status === 201) {
+                    toast.success('Registration successful! Please log in.');
+                    setTimeout(() => navigate('/login'), 1500);
                 }
             }
         } catch (error) {
-            console.error(error);
-            toast.error('An unexpected error occurred. Please try again.');
+            handleError(error, isLogin ? 'Login failed' : 'Registration failed');
         }
     };
 
-    // Handle errors
     const handleError = (error, defaultMessage) => {
-        if (error.response) {
-            toast.error(error.response.data.error || defaultMessage);
-        } else {
-            toast.error(defaultMessage);
-        }
+        const errorMessage = error.response?.data?.error || defaultMessage;
+        toast.error(`${errorMessage}. Please try again.`);
+        console.error(error);
     };
+
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <ToastContainer position="top-right" autoClose={3000} theme="colored" />
@@ -209,6 +188,7 @@ const AuthForm = ({ isLogin }) => {
         </form>
     );
 };
+
 
 
 export default AuthForm;

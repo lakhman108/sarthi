@@ -7,194 +7,184 @@ const Enrollment = require('../models/enrollmentmodel.js');
 const { authenticateToken, authorizeRole } = require('../middleware/authMiddleware');
 const fs = require('fs/promises');
 
-
-
-  router.get('/', authenticateToken, authorizeRole(['student', 'teacher']), async (req, res) => {
-    try {
-
-      // Finding enrollments for the authenticated user
-      const enrollments = await Enrollment.find({ studentId: req.user.userId } )
-
-      const teachercourses=await Course.find({teacherId:req.user.userId}).populate('teacherId', 'username');
-      let courses=[...teachercourses];
-      //   console.log(teachercourses);
-      // getting all courseId and populating the course with teacherId and username
-      const courseIds=enrollments.map(enrollment => enrollment.courseId);
-      console.log(courseIds);
-
-
-     for(let id in courseIds){
-        
-        const course=await Course.findById(courseIds[id]).populate('teacherId', 'username');
-        courses.push(course);
-     }
-     let updatedCourse=courses.filter((course, index, self) =>
-        index === self.findIndex((t) => t._id.toString() === course._id.toString())
-      );
-
-      console.log(updatedCourse);
-      console.log("\n\n\n")
-      if (!updatedCourse) return res.status(404).json({ error: 'Course not found' });
-      res.json(updatedCourse);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-// Get a course by ID
-
-router.get('/:id', async (req, res) => {
+// GET all courses
+router.get('/', authenticateToken, authorizeRole(['student', 'teacher']), async (req, res) => {
   try {
-    const course = await Course.findById(req.params.id).populate('teacherId', 'username');
-    if (!course) return res.status(404).json({ error: 'Course not found' });
-    res.json(course);
+    console.log(`[AUTH] User ${req.user.userId} requesting all courses`);
+
+    const enrollments = await Enrollment.find({ studentId: req.user.userId });
+    console.log(`[DB] Found ${enrollments.length} enrollments for user ${req.user.userId}`);
+
+    const teachercourses = await Course.find({teacherId: req.user.userId}).populate('teacherId', 'username');
+    console.log(`[DB] Found ${teachercourses.length} courses where user is teacher`);
+
+    let courses = [...teachercourses];
+    const courseIds = enrollments.map(enrollment => enrollment.courseId);
+    console.log(`[DB] Processing courseIds:`, courseIds);
+
+    for(let id in courseIds) {
+      const course = await Course.findById(courseIds[id]).populate('teacherId', 'username');
+      courses.push(course);
+    }
+
+    let updatedCourse = courses.filter((course, index, self) =>
+      index === self.findIndex((t) => t._id.toString() === course._id.toString())
+    );
+    console.log(`[DB] Final filtered courses count: ${updatedCourse.length}`);
+
+    if (!updatedCourse) return res.status(404).json({ error: 'Course not found' });
+    res.json(updatedCourse);
   } catch (error) {
+    console.error(`[ERROR] Get courses failed:`, error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Create new course(s)
-router.post('/',authenticateToken, authorizeRole(['student', 'teacher']), async (req, res) => {
+// GET course by ID
+router.get('/:id', async (req, res) => {
   try {
+    console.log(`[DB] Fetching course ID: ${req.params.id}`);
+    const course = await Course.findById(req.params.id).populate('teacherId', 'username');
+
+    if (!course) {
+      console.log(`[DB] Course not found: ${req.params.id}`);
+      return res.status(404).json({ error: 'Course not found' });
+    }
+
+    console.log(`[DB] Course found: ${course._id}`);
+    res.json(course);
+  } catch (error) {
+    console.error(`[ERROR] Get course by ID failed:`, error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST new course
+router.post('/', authenticateToken, authorizeRole(['student', 'teacher']), async (req, res) => {
+  try {
+    console.log(`[AUTH] User ${req.user.userId} creating new course`);
     const savedCourses = [];
+
     if (Array.isArray(req.body)) {
+      console.log(`[DB] Creating multiple courses: ${req.body.length}`);
       const courses = req.body;
       for (const courseData of courses) {
         const course = new Course(courseData);
         course.classCode = Course.generateClassCode();
         await course.save();
         savedCourses.push(course);
+        console.log(`[DB] Course created: ${course._id}`);
       }
     } else {
-      console.log(req.body);
-
+      console.log(`[DB] Creating single course:`, req.body);
       const course = new Course(req.body);
       course.classCode = Course.generateClassCode();
-      const coursedata=await course.save();
-      const payload={
-        studentId:req.user.userId,
-        courseId:coursedata._id
-      }
-      const enrollment=new Enrollment(payload);
-      const response=await enrollment.save();
-      console.log("\n\n\n")
-      console.log(coursedata);
-      console.log(response);
-      console.log("\n\n\n")
+      const coursedata = await course.save();
+      console.log(`[DB] Course created: ${coursedata._id}`);
+
+      const payload = {
+        studentId: req.user.userId,
+        courseId: coursedata._id
+      };
+      const enrollment = new Enrollment(payload);
+      const response = await enrollment.save();
+      console.log(`[DB] Enrollment created: ${response._id}`);
+
       savedCourses.push(course);
     }
     res.status(201).json(savedCourses);
   } catch (error) {
+    console.error(`[ERROR] Create course failed:`, error);
     res.status(500).json({ error: error.message });
   }
 });
 
-//this request is for update information of a course
-//we need to give id and fields to update
-//it will return updated course information or error
+// PATCH course
 router.patch('/:id', async (req, res) => {
-    try {
-      // Log the request body to ensure values are being sent correctly
-      console.log('Request body:', req.body);
+  try {
+    console.log(`[DB] Updating course ${req.params.id}`);
+    console.log(`[DB] Update payload:`, req.body);
 
-      const course = await Course.findById(req.params.id);
-      if (!course) {
-        return res.status(404).json({ error: 'Course not found' });
-      }
-
-      // Log the course details before updating
-      console.log('Course before update:', course);
-
-      // Update fields only if provided in the request body
-      course.courseName = req.body.courseName ?? course.courseName;
-      course.teacherId = req.body.teacherId ?? course.teacherId;
-      course.semester = req.body.semester ?? course.semester;
-      course.lectures = req.body.lectures ?? course.lectures;
-
-      // Save the updated course
-      const updatedCourse = await course.save();
-
-      // Log the course details after updating
-      console.log('Course after update:', updatedCourse);
-
-      // Respond with the updated course data
-      res.status(200).json(updatedCourse);
-    } catch (error) {
-      console.error('Error updating course:', error.message);
-      res.status(500).json({ error: error.message });
+    const course = await Course.findById(req.params.id);
+    if (!course) {
+      console.log(`[DB] Course not found: ${req.params.id}`);
+      return res.status(404).json({ error: 'Course not found' });
     }
-  });
 
-//   It uses MongoDB transactions to ensure all operations are atomic. If any operation fails, all changes will be rolled back.
-//   It first deletes the course using findByIdAndDelete.
-//   If the course is found, it then deletes all lectures associated with the course using Lecture.deleteMany().
-//   It also deletes all enrollments associated with the course using Enrollment.deleteMany().
-//   If all operations are successful, it commits the transaction and sends a success response.
-//   If any error occurs during the process, it aborts the transaction and sends an error response.
-router.delete('/:id', authenticateToken, authorizeRole(['student', 'teacher']),async (req, res) => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
+    console.log(`[DB] Course before update:`, course);
 
-    try {
-      const courseId = req.params.id;
-      console.log('Course ID:', courseId);
+    course.courseName = req.body.courseName ?? course.courseName;
+    course.teacherId = req.body.teacherId ?? course.teacherId;
+    course.semester = req.body.semester ?? course.semester;
+    course.lectures = req.body.lectures ?? course.lectures;
 
-      // Find the course
-      const course = await Course.findById(courseId).session(session);
-      if (!course) {
-        if(course.teacherId.toString()===req.user.userId){
-          await session.abortTransaction();
-          session.endSession();
-          return res.status(404).json({ error: 'Course not found' });
-        }
-        console.log('Course not found');
-        await session.abortTransaction();
-        session.endSession();
-        return res.status(404).json({ error: 'Course not found' });
-      }
+    const updatedCourse = await course.save();
+    console.log(`[DB] Course after update:`, updatedCourse);
 
-      // Find all lectures associated with the course
-      const lectures = await Lecture.find({ courseId: courseId }).session(session);
-      console.log('Lectures:', lectures);
+    res.status(200).json(updatedCourse);
+  } catch (error) {
+    console.error(`[ERROR] Update course failed:`, error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
-      // Delete folders for each lecture
-      for (const lecture of lectures) {
-        const str = lecture.videoLink;
-        const finalString = str
-          .replace("${process.env.HOST}/api", "public")
-          .replace("master.m3u8", "");
+// DELETE course
+router.delete('/:id', authenticateToken, authorizeRole(['student', 'teacher']), async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  console.log(`[TX] Starting deletion transaction for course ${req.params.id}`);
 
-        try {
-          await fs.rm(finalString, { recursive: true, force: true }); // Use promises
-          console.log(`${finalString} is deleted!`);
-        } catch (err) {
-          console.error(`Error deleting folder: ${finalString}`, err);
-          throw err; // If deletion fails, abort the transaction
-        }
-      }
+  try {
+    const courseId = req.params.id;
+    console.log(`[AUTH] User ${req.user.userId} attempting course deletion`);
 
-      // Delete the course
-      await Course.findByIdAndDelete(courseId).session(session);
-
-      // Delete all lectures associated with the course
-      await Lecture.deleteMany({ courseId: courseId }).session(session);
-
-      // Delete all enrollments associated with the course
-      await Enrollment.deleteMany({ courseId: courseId }).session(session);
-
-      // Commit the transaction
-      await session.commitTransaction();
-      console.log('Transaction committed successfully');
-      session.endSession();
-
-      res.json({ message: 'Course, associated data, and folders deleted', course });
-    } catch (error) {
-      console.error('Error in deletion process:', error);
+    const course = await Course.findById(courseId).session(session);
+    if (!course) {
+      console.log(`[DB] Course not found: ${courseId}`);
       await session.abortTransaction();
       session.endSession();
-      res.status(500).json({ error: error.message });
+      return res.status(404).json({ error: 'Course not found' });
     }
-  });
 
+    const lectures = await Lecture.find({ courseId: courseId }).session(session);
+    console.log(`[DB] Found ${lectures.length} lectures to delete`);
 
+    for (const lecture of lectures) {
+      const str = lecture.videoLink;
+      const finalString = str
+        .replace("${process.env.HOST}/api", "public")
+        .replace("master.m3u8", "");
+
+      try {
+        console.log(`[FS] Deleting folder: ${finalString}`);
+        await fs.rm(finalString, { recursive: true, force: true });
+        console.log(`[FS] Folder deleted successfully`);
+      } catch (err) {
+        console.error(`[ERROR] Folder deletion failed:`, err);
+        throw err;
+      }
+    }
+
+    await Course.findByIdAndDelete(courseId).session(session);
+    console.log(`[DB] Course deleted: ${courseId}`);
+
+    await Lecture.deleteMany({ courseId: courseId }).session(session);
+    console.log(`[DB] Lectures deleted for course: ${courseId}`);
+
+    await Enrollment.deleteMany({ courseId: courseId }).session(session);
+    console.log(`[DB] Enrollments deleted for course: ${courseId}`);
+
+    await session.commitTransaction();
+    console.log(`[TX] Transaction committed successfully`);
+    session.endSession();
+
+    res.json({ message: 'Course and associated data deleted', course });
+  } catch (error) {
+    console.error(`[ERROR] Course deletion failed:`, error);
+    await session.abortTransaction();
+    session.endSession();
+    res.status(500).json({ error: error.message });
+  }
+});
 
 module.exports = router;
