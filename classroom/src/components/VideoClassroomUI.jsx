@@ -26,12 +26,13 @@ const VideoClassroomUI = ({ courseName, classCode }) => {
     const [note, setNote] = useState('');
     const [showShare, setShowShare] = useState(false);
 
+    
     const handleLectureSelect = async (index) => {
         setCurrentLectureIndex(index);
         const selectedLecture = lectures[index];
 
         try {
-            await axios.patch(`${process.env.REACT_APP_API_URL}/api/lectures/${selectedLecture._id}/view`);
+            // await axios.patch(`${process.env.REACT_APP_API_URL}/api/lectures/${selectedLecture._id}/view`);
             setLectures(prevLectures => prevLectures.map(lecture =>
                 lecture._id === selectedLecture._id
                     ? { ...lecture, noOfViews: lecture.noOfViews + 1 }
@@ -166,7 +167,9 @@ const VideoClassroomUI = ({ courseName, classCode }) => {
                                 <div className="w-full lg:w-3/4">
                                     {currentLecture && (
                                         <div className="space-y-4 sm:space-y-6">
-                                            <VideoPlayer videoLink={currentLecture.videoLink} />
+                                            <VideoPlayer videoLink={currentLecture.videoLink}
+                                            lectureId={currentLecture._id}
+                                            />
                                             <LectureInfo lecture={currentLecture} onLike={handleLike} />
                                             <CommentSection lectureId={currentLecture._id} />
                                         </div>

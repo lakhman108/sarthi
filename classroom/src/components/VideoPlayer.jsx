@@ -1,5 +1,6 @@
 import React, { useEffect, useReducer, useRef, useState } from 'react';
 import Hls from 'hls.js';
+import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlay,
@@ -61,11 +62,20 @@ const reducer = (state, action) => {
   }
 };
 
-const VideoPlayer = ({ videoLink }) => {
+const VideoPlayer = ({ videoLink,lectureId }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
   const controlsTimeoutRef = useRef(null);
+
+  const updateViews = async (lectureId) => {
+    try {
+        console.log("updating views");
+        await axios.patch(`${process.env.REACT_APP_API_URL}/api/lectures/${lectureId}/view`);
+    } catch (error) {
+        console.error("Error updating views:", error);
+    }
+};
 
   useEffect(() => {
     const initializePlayer = async () => {
@@ -160,6 +170,7 @@ const VideoPlayer = ({ videoLink }) => {
     };
 
     const handleEnded = () => {
+      updateViews(lectureId);
       dispatch({ type: 'SET_ENDED', payload: true });
       dispatch({ type: 'SET_PLAYING', payload: false });
     };
@@ -281,6 +292,44 @@ const VideoPlayer = ({ videoLink }) => {
       }, 3000);
     }
   };
+const seekRelative = (seconds) => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.currentTime += seconds;
+}
+
+
+
+  // Add to VideoPlayer component
+useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (!state.showControls) return;
+
+      switch (e.key.toLowerCase()) {
+        case ' ':
+          e.preventDefault();
+          togglePlayPause();
+          break;
+        case 'arrowleft':
+          seekRelative(-5);
+          break;
+        case 'arrowright':
+          seekRelative(5);
+          break;
+        case 'm':
+          toggleMute();
+          break;
+        case 'f':
+          toggleFullscreen();
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [state.showControls]);
+
 
   return (
     <div className="bg-black flex justify-center items-center">
@@ -361,5 +410,7 @@ const QualitySelector = ({ quality, onChange }) => {
     </select>
   );
 };
+
+
 
 export default VideoPlayer;
