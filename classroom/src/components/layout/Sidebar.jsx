@@ -1,12 +1,18 @@
 // Sidebar.js
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Home, Settings, Menu,History,GraduationCap, NotebookIcon, Notebook, LucideNotebookPen } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useSidebar } from '../../context/SidebarContext';
 
 const Sidebar = () => {
   const { state, dispatch } = useSidebar();
   const navigate = useNavigate();
+  const location = useLocation();
+  useEffect(() => {
+    if (window.innerWidth < 768) {
+      dispatch({ type: 'COLLAPSE' }); // Add this action in your reducer
+    }
+  }, [location.pathname]);
 
   const handleMenuClick = () => {
     dispatch({ type: 'TOGGLE_EXPAND' });
@@ -22,6 +28,9 @@ const Sidebar = () => {
 
   const changeRoute = (route) => {
     navigate(`/${route}`);
+    if (window.innerWidth < 768) {
+      dispatch({ type: 'COLLAPSE' });
+    }
   };
 
 
@@ -53,7 +62,7 @@ const Sidebar = () => {
           <Settings size={24} />
           {(state.isExpanded || state.isHovered) && <span className="ml-2">Settings</span>}
         </button>
-      
+
       </div>
     </div>
   );

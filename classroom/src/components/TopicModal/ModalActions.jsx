@@ -16,7 +16,7 @@ const ModalActions = ({ onClose, isUploading }) => (
         isUploading ? 'opacity-50 cursor-not-allowed' : ''
       }`}
     >
-      {isUploading ? 'Uploading...' : 'Add Topic'}
+      {isUploading ? 'Uploading...' : 'Edit Topic'}
     </button>
   </div>
 );

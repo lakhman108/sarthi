@@ -7,8 +7,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { UserContext } from '../../context/Usercontex';
 import axios from 'axios';
-
-
+import config from '../../config/config';
 
 const InputField = ({ icon: Icon, ...props }) => (
     <div className="mb-4">
@@ -107,7 +106,7 @@ const AuthForm = ({ isLogin }) => {
 
                     // Fetch user data with the token
                     await axios
-                        .get('https://superb-insight-production.up.railway.app/api/users', {
+                        .get(`${process.env.REACT_APP_API_URL}/api/users`, {
                             headers: { Authorization: `Bearer ${token}` },
                         })
                         .then((response) => {

@@ -5,7 +5,7 @@ import CommentItem from './CommentItem';
 const CommentList = ({ comments }) => {
 
 
-    console.log(comments);
+    // console.log(comments);
     return (
         <div>
             {comments && comments.map((comment, index) => (

@@ -7,16 +7,16 @@ import useAxiosFetch from '../utils/fetchClasses';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { UserContext } from '../context/Usercontex';
-
+import config from '../config/config';
 const ClassroomUI = () => {
     const { user } = useContext(UserContext);
-    console.log("----------------------")
-    console.log(user)
+    // console.log("----------------------")
+    // console.log(user)
     const [courses, setCourses] = useState([]);
     const savedToken = Cookies.get('token');
 
     //   console.log("Saved Token:", savedToken);
-    const { data, loading, error, refetch } = useAxiosFetch('https://superb-insight-production.up.railway.app/api/courses', {
+    const { data, loading, error, refetch } = useAxiosFetch(`${process.env.REACT_APP_API_URL}/api/courses`, {
         headers: {
             Authorization: `Bearer ${savedToken}`,
         }
@@ -38,7 +38,7 @@ const ClassroomUI = () => {
     const handleDelete = async (id) => {
         try {
             const savedToken = Cookies.get('token');
-            await axios.delete(`https://superb-insight-production.up.railway.app/api/courses/${id}`, {
+            await axios.delete(`${process.env.REACT_APP_API_URL}/api/courses/${id}`, {
                 headers: {
                     Authorization: `Bearer ${savedToken}`,
                 },
@@ -51,7 +51,7 @@ const ClassroomUI = () => {
 
     const handleEdit = async (id, newTitle) => {
         try {
-            await axios.patch(`https://superb-insight-production.up.railway.app/api/courses/${id}`, { courseName: newTitle });
+            await axios.patch(`${process.env.REACT_APP_API_URL}/api/courses/${id}`, { courseName: newTitle });
             setCourses(courses.map(course =>
                 course._id === id ? { ...course, courseName: newTitle } : course
             ));

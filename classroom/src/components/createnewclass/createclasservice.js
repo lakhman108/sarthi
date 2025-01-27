@@ -1,5 +1,6 @@
 import axios, { Axios } from "axios";
 import Cookies from "js-cookie";
+import config from '../../config/config';
 const addclass=(classname,teacherid,semester) =>{
 
     const body={
@@ -9,8 +10,8 @@ const addclass=(classname,teacherid,semester) =>{
     }
     const savedtoken=Cookies.get('token');
 
-console.log(body);
-axios.post('https://superb-insight-production.up.railway.app/api/courses',body,{
+// console.log(body);
+axios.post(`${process.env.REACT_APP_API_URL}/api/courses`,body,{
     headers:{
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${savedtoken}`

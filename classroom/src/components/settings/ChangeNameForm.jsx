@@ -63,9 +63,9 @@ const ChangeNameForm = ({ user, setUser }) => {
         setIsSubmitting(true);
 
         try {
-            console.log('Attempting to update name...');
+            // console.log('Attempting to update name...');
             let updatedUser = await updateUserName(user._id, newName);
-            console.log('Name update response:', updatedUser);
+            // console.log('Name update response:', updatedUser);
             updatedUser= updatedUser.data;
 
             if (!updatedUser) {

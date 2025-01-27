@@ -1,12 +1,12 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { toast } from 'react-toastify';
-
+import config from '../config/config';
 
 
 export const handleNoteSave = async (id,note) => {
     try {
-      await axios.patch(`https://superb-insight-production.up.railway.app/api/enrollments/${id}/notes`, { "notes":note }, {
+      await axios.patch(`${process.env.REACT_APP_API_URL}/api/enrollments/${id}/notes`, { "notes":note }, {
         headers: {
           Authorization: `Bearer ${Cookies.get('token')}`,
         },

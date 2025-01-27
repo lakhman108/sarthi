@@ -1,7 +1,7 @@
 import axios from 'axios';
 import Cookies  from 'js-cookie';
-const API_URL = 'https://superb-insight-production.up.railway.app/api/users';
-
+import config from '../config/config';
+const API_URL = `${process.env.REACT_APP_API_URL}/api/users`;
 export const updateUserName = async (userId, newName) => {
   const response = await axios.patch(`${API_URL}/${userId}`, { username: newName },{
     headers: {

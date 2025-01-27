@@ -8,8 +8,8 @@ const app = express();
 const port = process.env.PORT || 3000;
 const path = require('path');
 const coreOptions = {
-  origin: 'https://sarthi-nu.vercel.app',
-  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+//   origin: 'https://sarthi-nu.vercel.app',
+//   optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 };
 app.use(cors(coreOptions));
 // Connect to MongoDB
@@ -49,5 +49,5 @@ app.get("/", (req, res) => {
 
 // Start the server
 app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+  console.log(`Server is running on ${process.env.HOST}`);
 });

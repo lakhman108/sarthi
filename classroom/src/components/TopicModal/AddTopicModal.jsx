@@ -7,7 +7,7 @@ import FileInput from './FileInput';
 import UploadProgress from './UploadProgress';
 import ErrorMessage from './ErrorMessage';
 import ModalActions from './ModalActions';
-
+import config from '../../config/config';
 const AddTopicModal = ({ isOpen, onClose, courseId, onTopicAdded }) => {
     const [topicName, setTopicName] = useState('');
     const [file, setFile] = useState(null);
@@ -15,8 +15,8 @@ const AddTopicModal = ({ isOpen, onClose, courseId, onTopicAdded }) => {
     const [uploadProgress, setUploadProgress] = useState(0);
     const [error, setError] = useState('');
 
-    const uploadVideoUrl = 'https://superb-insight-production.up.railway.app/api/upload';
-    const createLectureUrl = 'https://superb-insight-production.up.railway.app/api/lectures';
+    const uploadVideoUrl = `${process.env.REACT_APP_API_URL}/api/upload`;
+    const createLectureUrl = `${process.env.REACT_APP_API_URL}/api/lectures`;
 
     const handleFileChange = (e) => {
         setFile(e.target.files[0]);

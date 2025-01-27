@@ -16,6 +16,9 @@ const reducer = (state, action) => {
       return { ...state, isHovered: true };
     case 'UNSET_HOVER':
       return { ...state, isHovered: false };
+    case 'COLLAPSE':
+      return { ...state,isExpanded: false,isHovered: false
+      };
     default:
       return state;
   }

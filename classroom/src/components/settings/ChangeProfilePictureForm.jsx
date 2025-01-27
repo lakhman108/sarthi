@@ -34,14 +34,14 @@ const ChangeProfilePictureForm = ({ user, setUser }) => {
       const updatedUser = await updateUserProfilePicture(formData);
 
       // If we get here, the API call was successful
-      console.log("API call successful, about to update user state");
+    //   console.log("API call successful, about to update user state");
       setUser(updatedUser);
 
-      console.log("User state updated, about to clear form");
+    //   console.log("User state updated, about to clear form");
       setFile(null);
       setPreviewUrl(null);
 
-      console.log("Form cleared, about to show success toast");
+    //   console.log("Form cleared, about to show success toast");
       // Try using a timeout to ensure other state updates are complete
       setTimeout(() => {
         toast.success("Profile picture updated successfully!", {

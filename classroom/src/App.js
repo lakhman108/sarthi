@@ -13,8 +13,8 @@ import JoinClassroomWithQr from './utils/JoinClassroomWithQr';
 function App() {
   const { isAuthenticated, loading } = useContext(UserContext);
 
-  console.log("isAuthenticated:", isAuthenticated);
-  console.log("loading:", loading);
+//   console.log("isAuthenticated:", isAuthenticated);
+//   console.log("loading:", loading);
 
   const ProtectedRoute = ({ children }) => {
     if (loading) {

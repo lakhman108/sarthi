@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+
 import axios from 'axios';
 
 const useAxiosFetch = (url, options) => {
@@ -8,11 +9,11 @@ const useAxiosFetch = (url, options) => {
 
     const fetchData = async (customUrl) => {
         setLoading(true);
-        console.log("Fetching data...");
+        // console.log("Fetching data...");
         try {
             const response = await axios.get(customUrl || url, options);
             setData(response.data);
-            console.log("Data fetched:", response.data);
+            // console.log("Data fetched:", response.data);
         } catch (err) {
             setError(err);
             console.error("Fetch error:", err);
@@ -22,7 +23,7 @@ const useAxiosFetch = (url, options) => {
     };
 
     useEffect(() => {
-        console.log("Fetching data on mount or URL change");
+        // console.log("Fetching data on mount or URL change");
         fetchData();
     }, [url]);
 

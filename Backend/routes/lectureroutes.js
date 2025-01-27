@@ -191,10 +191,8 @@ router.patch("/:id/update", async (req, res) => {
 		if (!lecture) return res.status(404).json({ error: "Lecture not found" });
 		lecture.nameOfTopic = req.body.nameOfTopic || lecture.nameOfTopic;
 
-		lecture.videoLink =  lecture.videoLink;
-
+		lecture.videoLink =  req.body.videoLink || lecture.videoLink;
 		await lecture.save();
-
 		res.status(200).json({ message: "Lecture edited" });
 	} catch (error) {
 		res.status(500).json({ error: error.message });

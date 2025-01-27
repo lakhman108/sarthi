@@ -4,7 +4,7 @@ import { Play, MoreHorizontal, Edit3, Trash2 } from 'lucide-react';
 import { UserContext } from '../context/Usercontex';
 import { DeleteAleart } from './DeleteAleart';
 import EditTopicModal from './TopicModal/EditTopicModal';
-
+import config from '../config/config';
 // Action types
 const TOGGLE_ACTIONS = 'TOGGLE_ACTIONS';
 const OPEN_DELETE_CONFIRMATION = 'OPEN_DELETE_CONFIRMATION';
@@ -80,7 +80,7 @@ const PlaylistItem = ({ lecture, isActive, onClick, onLectureDeleted, onLectureE
     const handleDeleteConfirm = async () => {
         dispatch({ type: START_DELETING });
         try {
-            const response = await axios.delete(`https://superb-insight-production.up.railway.app/api/lectures/${lecture._id}`);
+            const response = await axios.delete(`${process.env.REACT_APP_API_URL}/api/lectures/${lecture._id}`);
             if (response.data.message === "Lecture deleted") {
                 onLectureDeleted(lecture._id);
             }

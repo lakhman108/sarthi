@@ -1,15 +1,15 @@
 import React, { useContext, useState } from 'react';
 import axios from 'axios';
 import { UserContext } from '../context/Usercontex';
-
+import config from '../../config/config';
 const EnrollButton = ({ courseId }) => {
     const { user } = useContext(UserContext);
     const [isEnrolled, setIsEnrolled] = useState(false);
 
     const handleEnroll = async () => {
         try {
-            console.log(user);
-            await axios.post('https://superb-insight-production.up.railway.app/api/enrollments', {
+            // console.log(user);
+            await axios.post(`${process.env.REACT_APP_API_URL}/api/enrollments`, {
                 studentId: user._id,
                 courseId: courseId
             });

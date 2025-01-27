@@ -6,7 +6,7 @@ import FileInput from './FileInput';
 import UploadProgress from './UploadProgress';
 import ErrorMessage from './ErrorMessage';
 import ModalActions from './ModalActions';
-
+import config from '../../config/config';
 const EditTopicModal = ({ isOpen, onClose, lecture, onLectureEdited }) => {
     //console.log(lecture);
     const [topicName, setTopicName] = useState(lecture.nameOfTopic);
@@ -16,8 +16,8 @@ const EditTopicModal = ({ isOpen, onClose, lecture, onLectureEdited }) => {
     const [error, setError] = useState('');
     const [videoAction, setVideoAction] = useState('keep'); // 'keep', 'delete', or 'update'
 
-    const uploadVideoUrl = 'https://superb-insight-production.up.railway.app/api/upload';
-    const updateLectureUrl = 'https://superb-insight-production.up.railway.app/api/lecture';
+    const uploadVideoUrl = `${process.env.REACT_APP_API_URL}/api/upload`;
+    const updateLectureUrl = `${process.env.REACT_APP_API_URL}/api/lecture`;
 
     const handleFileChange = (e) => {
         setFile(e.target.files[0]);
@@ -37,7 +37,7 @@ const EditTopicModal = ({ isOpen, onClose, lecture, onLectureEdited }) => {
             }
 
             let videoLink = lecture.videoLink;
-
+            console.log("before update update", videoLink);
             if (videoAction === 'delete') {
                 videoLink = null;
             } else if (videoAction === 'update' && file) {
@@ -50,6 +50,7 @@ const EditTopicModal = ({ isOpen, onClose, lecture, onLectureEdited }) => {
                     },
                 });
                 videoLink = responseUpload.data.masterPlaylist;
+                console.log("after update", videoLink);
             }
 
             const lectureData = {
@@ -57,7 +58,7 @@ const EditTopicModal = ({ isOpen, onClose, lecture, onLectureEdited }) => {
                 videoLink: videoLink,
             };
 
-            await axios.patch(`https://superb-insight-production.up.railway.app/api/lectures/${lecture._id}/update`, lectureData);
+            await axios.patch(`${process.env.REACT_APP_API_URL}/api/lectures/${lecture._id}/update`, lectureData);
             onLectureEdited();
             onClose();
         } catch (err) {

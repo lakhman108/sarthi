@@ -1,7 +1,7 @@
 import Cookies from 'js-cookie';
 export const fetchCourses = async () => {
     try {
-      const response = await fetch('https://superb-insight-production.up.railway.app/api/courses',{
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/courses`,{
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${Cookies.get('token')}`,

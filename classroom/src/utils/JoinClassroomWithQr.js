@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-
+import config from '../config/config';
 const JoinClassroomWithQr = () => {
   const { inviteCode } = useParams();
   const navigate = useNavigate();
@@ -21,7 +21,7 @@ const JoinClassroomWithQr = () => {
           return;
         }
 
-        const response = await axios.post('https://superb-insight-production.up.railway.app/api/enrollments/join',
+        const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/enrollments/join`,
           { inviteCode },
           {
             headers: {

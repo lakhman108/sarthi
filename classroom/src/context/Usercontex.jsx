@@ -1,7 +1,7 @@
 import { createContext, useState, useEffect } from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
-
+import config from "../config/config";
 export const UserContext = createContext(null);
 
 export const UserProvider = (props) => {
@@ -14,13 +14,13 @@ export const UserProvider = (props) => {
         const checkAuthStatus = async () => {
             if (savedToken) {
                 try {
-                    const response = await axios.get('https://superb-insight-production.up.railway.app/api/users', {
+                    const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/users`, {
                         headers: {
                             Authorization: `Bearer ${savedToken}`,
                         },
                     });
                     const userData = response.data;
-                    console.log(userData);
+                    // console.log(userData);
                     setIsAuthenticated(true);
                     setUser(userData);
                 } catch (error) {

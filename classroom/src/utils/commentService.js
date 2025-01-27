@@ -1,9 +1,10 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
-const API_URL = 'https://superb-insight-production.up.railway.app/api';
+import config from '../config/config';
+const API_URL = `${process.env.REACT_APP_API_URL}/api`;
 
 export const fetchComments = async (lectureId) => {
-    console.log(lectureId)
+    // console.log(lectureId)
   const response = await axios.get(`${API_URL}/lectures/${lectureId}/comments`,{
     headers: {
       Authorization: `Bearer ${Cookies.get('token')}`
