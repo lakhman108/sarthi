@@ -11,6 +11,7 @@ const coreOptions = {
   origin: process.env.FRONTEND_HOST,
   optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 };
+console.log(coreOptions);
 app.use(cors(coreOptions));
 // Connect to MongoDB
 const uri = process.env.MONGODB_URI;

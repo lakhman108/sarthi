@@ -24,138 +24,179 @@ const upload = multer({
   fileFilter: fileFilter,
 });
 
-//this function is used to upload the profile picture and generate the user's profile picture url
+
 const uploadProfilePicture = (req, res) => {
-    console.log("Starting uploadProfilePicture function");
+    console.log(`[FILE] Starting profile picture upload`);
     return new Promise((resolve, reject) => {
       upload.single('profilePicture')(req, res, (err) => {
         if (err) {
-          console.error("Error in file upload:", err);
+          console.error(`[ERROR] File upload failed:`, err);
           reject(err);
         } else if (!req.file) {
-          console.error("No file uploaded");
+          console.error(`[ERROR] No file provided in request`);
           reject(new Error('No file uploaded'));
         } else {
-          console.log("File uploaded successfully:", req.file);
+          console.log(`[FILE] Upload successful: ${req.file.filename}`);
           const fileUrl = `${process.env.HOST}/api/hls/profilePictures/${req.file.filename}`;
-          console.log("Generated file URL:", fileUrl);
+          console.log(`[FILE] Generated URL: ${fileUrl}`);
           resolve(fileUrl);
         }
       });
     });
-  };
-
-
+};
 
 exports.updateUser = async (req, res) => {
   try {
-
+    console.log(`[USER] Processing update for user ID: ${req.params.id}`);
     let user;
+
     if(req.body.username) {
-        user=await User.findOne({ username: req.body.username });
-        console.log("User:", user);
+        user = await User.findOne({ username: req.body.username });
+        console.log(`[DB] Username lookup result:`, user ? 'found' : 'not found');
+
+        if(user && user._id == req.user.userId) {
+            console.log(`[USER] Username unchanged: ${req.body.username}`);
+            return res.status(400).json({ error: 'Username already in use' });
+        }
         if(user) {
-            console.log("Username already exists deer");
+            console.log(`[USER] Username taken: ${req.body.username}`);
             return res.status(400).json({ error: 'Username already exists' });
         }
     }
-     user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    user.password="";
+
+    user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    console.log(`[DB] User update status:`, user ? 'success' : 'not found');
+
+    if (!user) {
+        console.log(`[ERROR] User not found: ${req.params.id}`);
+        return res.status(404).json({ error: 'User not found' });
+    }
+
+    user.password = "";
     res.json(user);
   } catch (error) {
+    console.error(`[ERROR] Update user failed:`, error);
     res.status(400).json({ error: error.message });
   }
 };
 
 exports.updatePassword = async (req, res) => {
   try {
+    console.log(`[USER] Processing password update for user: ${req.params.id}`);
     const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ error: 'User not found' });
 
+    if (!user) {
+        console.log(`[ERROR] User not found: ${req.params.id}`);
+        return res.status(404).json({ error: 'User not found' });
+    }
+
+    console.log(`[AUTH] Validating current password`);
     const isMatch = await user.comparePassword(req.body.currentPassword);
-    if (!isMatch) return res.status(400).json({ error: 'Current password is incorrect' });
+    if (!isMatch) {
+        console.log(`[AUTH] Invalid current password provided`);
+        return res.status(400).json({ error: 'Current password is incorrect' });
+    }
 
     user.password = req.body.newPassword;
     await user.save();
+    console.log(`[DB] Password updated successfully`);
 
     res.json({ message: 'Password updated successfully' });
   } catch (error) {
+    console.error(`[ERROR] Password update failed:`, error);
     res.status(400).json({ error: error.message });
   }
 };
 
-
 exports.updateProfilePicture = async (req, res) => {
   try {
-    console.log("updateProfilePicture method called",req.user.userId);
-    console.log("Request body:", req.body);
-    console.log("Request file:", req.file);
-
+    console.log(`[FILE] Processing profile picture update for user: ${req.user.userId}`);
     const fileUrl = await uploadProfilePicture(req, res);
-    console.log("File URL received:", fileUrl);
+    console.log(`[FILE] Generated URL: ${fileUrl}`);
 
     const user = await User.findByIdAndUpdate(
         req.user.userId,
         { $set: { profilePictureImageLink: fileUrl } },
+    );
+    console.log(`[DB] Profile picture update status:`, user ? 'success' : 'failed');
 
-      );
-  const updatedUser = await User.findById(req.user.userId);
+    const updatedUser = await User.findById(req.user.userId);
     if (!user) {
-      console.log("User not found");
-      return res.status(404).json({ error: 'User not found' });
+        console.log(`[ERROR] User not found: ${req.user.userId}`);
+        return res.status(404).json({ error: 'User not found' });
     }
 
-    console.log("Updated user:", user);
-    user.password="";
+    user.password = "";
     res.json(updatedUser);
   } catch (error) {
-    console.error("Error in updateProfilePicture:", error);
+    console.error(`[ERROR] Profile picture update failed:`, error);
     res.status(400).json({ error: error.message });
   }
 };
-// In This code first we are checking if the request body is an array or not. If it is an array, we are iterating over each user data and saving it to the database. If it is not an array, we are directly saving the user data to the database. Finally, we are sending the saved users as a response.
 
 exports.getLoggedInUser = async (req, res) => {
     try {
-      const user = await User.findById(req.user.userId);
-      if (!user) return res.status(404).json({ error: 'User not found' });
-      user.password="";
-      res.json(user);
+        console.log(`[USER] Fetching logged-in user: ${req.user.userId}`);
+        const user = await User.findById(req.user.userId);
+        console.log(`[DB] User lookup status:`, user ? 'found' : 'not found');
 
+        if (!user) {
+            console.log(`[ERROR] User not found: ${req.user.userId}`);
+            return res.status(404).json({ error: 'User not found' });
+        }
+        user.password = "";
+        res.json(user);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+        console.error(`[ERROR] Fetch logged-in user failed:`, error);
+        res.status(500).json({ error: error.message });
     }
-  };
+};
 
-  exports.getAllUsers = async (req, res) => {
+exports.getAllUsers = async (req, res) => {
     try {
-      const users = await User.find();
-      user.password="";
-      res.json(users);
+        console.log(`[USER] Fetching all users`);
+        const users = await User.find();
+        console.log(`[DB] Found ${users.length} users`);
+        users.forEach(user => user.password = "");
+        res.json(users);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+        console.error(`[ERROR] Fetch all users failed:`, error);
+        res.status(500).json({ error: error.message });
     }
-  };
+};
 
-  exports.getUserById = async (req, res) => {
+exports.getUserById = async (req, res) => {
     try {
-      const user = await User.findById(req.params.id);
-      if (!user) return res.status(404).json({ error: 'User not found' });
-      user.password="";
-      res.json(user);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  };
+        console.log(`[USER] Fetching user by ID: ${req.params.id}`);
+        const user = await User.findById(req.params.id);
+        console.log(`[DB] User lookup status:`, user ? 'found' : 'not found');
 
-  exports.deleteUser = async (req, res) => {
-    try {
-      const user = await User.findByIdAndDelete(req.params.id);
-      if (!user) return res.status(404).json({ error: 'User not found' });
-      user.password="";
-      res.json({ message: 'User deleted', user });
+        if (!user) {
+            console.log(`[ERROR] User not found: ${req.params.id}`);
+            return res.status(404).json({ error: 'User not found' });
+        }
+        user.password = "";
+        res.json(user);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+        console.error(`[ERROR] Fetch user by ID failed:`, error);
+        res.status(500).json({ error: error.message });
     }
-  };
+};
+
+exports.deleteUser = async (req, res) => {
+    try {
+        console.log(`[USER] Deleting user: ${req.params.id}`);
+        const user = await User.findByIdAndDelete(req.params.id);
+        console.log(`[DB] User deletion status:`, user ? 'success' : 'not found');
+
+        if (!user) {
+            console.log(`[ERROR] User not found: ${req.params.id}`);
+            return res.status(404).json({ error: 'User not found' });
+        }
+        user.password = "";
+        res.json({ message: 'User deleted', user });
+    } catch (error) {
+        console.error(`[ERROR] Delete user failed:`, error);
+        res.status(500).json({ error: error.message });
+    }
+};
