@@ -1,0 +1,16 @@
+:root {
+  --primary-color: #4f46e5;
+  --secondary-color: #3730a3;
+  --text-color: #111827;
+  --background-color: #ffffff;
+  --error-color: #ef4444;
+  --success-color: #10b981;
+
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
