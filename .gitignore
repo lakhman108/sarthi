@@ -29,3 +29,8 @@ public/
 .DS_Store
 Thumbs.db
 .env
+
+# amplify
+.amplify
+amplify_outputs*
+amplifyconfiguration*
