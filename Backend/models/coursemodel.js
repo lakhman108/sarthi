@@ -12,29 +12,29 @@ const courseSchema = new Schema({
 
 
 
-courseSchema.statics.generateClassCode = function() {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-    for (let i = 0; i < 6; i++) {
-      result += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    return result;
-  };
-  courseSchema.pre('save', async function(next) {
-    if (!this.classCode) {
-      let classCode;
-      let isUnique = false;
-      while (!isUnique) {
-        classCode = this.constructor.generateClassCode();
-        const existingCourse = await this.constructor.findOne({ classCode });
-        if (!existingCourse) {
-          isUnique = true;
-        }
-      }
-      this.classCode = classCode;
-    }
-    next();
-  });
+// courseSchema.statics.generateClassCode = function() {
+//     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+//     let result = '';
+//     for (let i = 0; i < 6; i++) {
+//       result += characters.charAt(Math.floor(Math.random() * characters.length));
+//     }
+//     return result;
+//   };
+//   courseSchema.pre('save', async function(next) {
+//     if (!this.classCode) {
+//       let classCode;
+//       let isUnique = false;
+//       while (!isUnique) {
+//         classCode = this.constructor.generateClassCode();
+//         const existingCourse = await this.constructor.findOne({ classCode });
+//         if (!existingCourse) {
+//           isUnique = true;
+//         }
+//       }
+//       this.classCode = classCode;
+//     }
+//     next();
+//   });
 
 
 

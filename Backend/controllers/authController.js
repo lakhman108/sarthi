@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/usermodel');
 
+//Register a new user (For Normal users)
 exports.register = async (req, res) => {
     try {
       const { username, email, password, role } = req.body;
@@ -25,6 +26,8 @@ exports.register = async (req, res) => {
       res.status(500).json({ error: 'Internal server error' });
     }
   };
+
+//Login a user and generate a JWT token
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;

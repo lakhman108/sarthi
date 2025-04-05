@@ -44,7 +44,11 @@ router.get('/', authenticateToken, authorizeRole(['student', 'teacher']), async 
 router.get('/:id', async (req, res) => {
   try {
     console.log(`[DB] Fetching course ID: ${req.params.id}`);
+
+
+
     const course = await Course.findById(req.params.id).populate('teacherId', 'username');
+
 
     if (!course) {
       console.log(`[DB] Course not found: ${req.params.id}`);
@@ -59,7 +63,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST new course
+// create new course
 router.post('/', authenticateToken, authorizeRole(['student', 'teacher']), async (req, res) => {
   try {
     console.log(`[AUTH] User ${req.user.userId} creating new course`);

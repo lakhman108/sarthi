@@ -7,6 +7,9 @@ const fs = require('fs');
 const app = express.Router();
 let videoName;
 
+// For sanitizing file names
+// This function replaces spaces with dashes, removes special characters,
+// and ensures the filename is lowercase
 const sanitizeFileName = (fileName) => {
   return fileName
     .toLowerCase()
@@ -16,6 +19,7 @@ const sanitizeFileName = (fileName) => {
     .replace(/^-+|-+$/g, '');
 };
 
+// Set up multer for file uploads
 const storageEngine = multer.diskStorage({
   destination: './public/uploads/',
   filename: function (req, file, callback) {
@@ -26,6 +30,7 @@ const storageEngine = multer.diskStorage({
   },
 });
 
+// File filter to only accept specific video file types
 const fileFilter = (req, file, callback) => {
   const validTypes = /mp4|MOV|m4v/;
   const isValid = validTypes.test(path.extname(file.originalname));
@@ -42,6 +47,7 @@ const fileFilter = (req, file, callback) => {
   }
 };
 
+// Initialize multer with the storage engine and file filter
 const upload = multer({
   storage: storageEngine,
   fileFilter: fileFilter,
@@ -73,6 +79,13 @@ ${res}/stream_${res}.m3u8`;
 
   fs.writeFileSync(`${outputDir}/master.m3u8`, playlistContent);
 };
+
+// Endpoint to handle video upload and processing
+// This endpoint receives a video file, processes it with ffmpeg,
+// and generates HLS streams for different resolutions
+// It also generates a master playlist for adaptive streaming
+// The processed video files are stored in the public/hls directory
+// The endpoint returns the URL of the master playlist
 
 app.post('/', upload.single('uploadedFile'), async (req, res) => {
   try {

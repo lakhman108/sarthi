@@ -3,6 +3,7 @@ const User = require('../models/usermodel');
 const multer = require('multer');
 const path = require('path');
 
+// Set up multer for file uploads
 const storageEngine = multer.diskStorage({
   destination: './public/hls/profilePictures/',
   filename: function (req, file, callback) {
@@ -10,6 +11,7 @@ const storageEngine = multer.diskStorage({
   },
 });
 
+// File filter to only accept only jpg,jpeg,png,gif file types
 const fileFilter = (req, file, callback) => {
   let pattern = /jpg|jpeg|png|gif/;
   if (pattern.test(path.extname(file.originalname).toLowerCase())) {
@@ -19,12 +21,13 @@ const fileFilter = (req, file, callback) => {
   }
 };
 
+// Initialize multer with the storage engine and file filter
 const upload = multer({
   storage: storageEngine,
   fileFilter: fileFilter,
 });
 
-
+// Middleware to handle file uploads
 const uploadProfilePicture = (req, res) => {
     console.log(`[FILE] Starting profile picture upload`);
     return new Promise((resolve, reject) => {
@@ -45,6 +48,7 @@ const uploadProfilePicture = (req, res) => {
     });
 };
 
+//update user details
 exports.updateUser = async (req, res) => {
   try {
     console.log(`[USER] Processing update for user ID: ${req.params.id}`);
@@ -80,6 +84,7 @@ exports.updateUser = async (req, res) => {
   }
 };
 
+//update user password
 exports.updatePassword = async (req, res) => {
   try {
     console.log(`[USER] Processing password update for user: ${req.params.id}`);
@@ -108,6 +113,7 @@ exports.updatePassword = async (req, res) => {
   }
 };
 
+//update user profile picture
 exports.updateProfilePicture = async (req, res) => {
   try {
     console.log(`[FILE] Processing profile picture update for user: ${req.user.userId}`);
@@ -134,6 +140,8 @@ exports.updateProfilePicture = async (req, res) => {
   }
 };
 
+//get logged in user using req.user.userId
+// This assumes that the user ID is stored in req.user.userId by the authentication middleware
 exports.getLoggedInUser = async (req, res) => {
     try {
         console.log(`[USER] Fetching logged-in user: ${req.user.userId}`);
@@ -152,19 +160,20 @@ exports.getLoggedInUser = async (req, res) => {
     }
 };
 
-exports.getAllUsers = async (req, res) => {
-    try {
-        console.log(`[USER] Fetching all users`);
-        const users = await User.find();
-        console.log(`[DB] Found ${users.length} users`);
-        users.forEach(user => user.password = "");
-        res.json(users);
-    } catch (error) {
-        console.error(`[ERROR] Fetch all users failed:`, error);
-        res.status(500).json({ error: error.message });
-    }
-};
+// exports.getAllUsers = async (req, res) => {
+//     try {
+//         console.log(`[USER] Fetching all users`);
+//         const users = await User.find();
+//         console.log(`[DB] Found ${users.length} users`);
+//         users.forEach(user => user.password = "");
+//         res.json(users);
+//     } catch (error) {
+//         console.error(`[ERROR] Fetch all users failed:`, error);
+//         res.status(500).json({ error: error.message });
+//     }
+// };
 
+//get user by id
 exports.getUserById = async (req, res) => {
     try {
         console.log(`[USER] Fetching user by ID: ${req.params.id}`);
@@ -183,20 +192,20 @@ exports.getUserById = async (req, res) => {
     }
 };
 
-exports.deleteUser = async (req, res) => {
-    try {
-        console.log(`[USER] Deleting user: ${req.params.id}`);
-        const user = await User.findByIdAndDelete(req.params.id);
-        console.log(`[DB] User deletion status:`, user ? 'success' : 'not found');
+// exports.deleteUser = async (req, res) => {
+//     try {
+//         console.log(`[USER] Deleting user: ${req.params.id}`);
+//         const user = await User.findByIdAndDelete(req.params.id);
+//         console.log(`[DB] User deletion status:`, user ? 'success' : 'not found');
 
-        if (!user) {
-            console.log(`[ERROR] User not found: ${req.params.id}`);
-            return res.status(404).json({ error: 'User not found' });
-        }
-        user.password = "";
-        res.json({ message: 'User deleted', user });
-    } catch (error) {
-        console.error(`[ERROR] Delete user failed:`, error);
-        res.status(500).json({ error: error.message });
-    }
-};
+//         if (!user) {
+//             console.log(`[ERROR] User not found: ${req.params.id}`);
+//             return res.status(404).json({ error: 'User not found' });
+//         }
+//         user.password = "";
+//         res.json({ message: 'User deleted', user });
+//     } catch (error) {
+//         console.error(`[ERROR] Delete user failed:`, error);
+//         res.status(500).json({ error: error.message });
+//     }
+// };
