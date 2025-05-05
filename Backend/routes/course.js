@@ -7,7 +7,72 @@ const Enrollment = require('../models/enrollmentmodel.js');
 const { authenticateToken, authorizeRole } = require('../middleware/authMiddleware');
 const fs = require('fs/promises');
 
-// GET all courses
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Course:
+ *       type: object
+ *       required:
+ *         - courseName
+ *         - teacherId
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: Auto-generated unique identifier
+ *         courseName:
+ *           type: string
+ *           description: Name of the course
+ *         teacherId:
+ *           type: string
+ *           description: ID of the teacher who created the course
+ *         semester:
+ *           type: string
+ *           description: Semester information
+ *         lectures:
+ *           type: array
+ *           items:
+ *             type: string
+ *           description: Array of lecture IDs associated with this course
+ *         classCode:
+ *           type: string
+ *           description: Unique code for joining the course
+ *       example:
+ *         courseName: Introduction to Computer Science
+ *         teacherId: 60d21b4667d0d8992e610c85
+ *         semester: Fall 2025
+ *         classCode: ABC123
+ */
+
+/**
+ * @swagger
+ * tags:
+ *   name: Courses
+ *   description: Course management endpoints
+ */
+
+/**
+ * @swagger
+ * /api/courses:
+ *   get:
+ *     summary: Get all courses for authenticated user
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of courses for the user
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Course'
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
 router.get('/', authenticateToken, authorizeRole(['student', 'teacher']), async (req, res) => {
   try {
     console.log(`[AUTH] User ${req.user.userId} requesting all courses`);
@@ -40,15 +105,35 @@ router.get('/', authenticateToken, authorizeRole(['student', 'teacher']), async 
   }
 });
 
-// GET course by ID
+/**
+ * @swagger
+ * /api/courses/{id}:
+ *   get:
+ *     summary: Get course by ID
+ *     tags: [Courses]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Course ID
+ *     responses:
+ *       200:
+ *         description: Course details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Course'
+ *       404:
+ *         description: Course not found
+ *       500:
+ *         description: Server error
+ */
 router.get('/:id', async (req, res) => {
   try {
     console.log(`[DB] Fetching course ID: ${req.params.id}`);
-
-
-
     const course = await Course.findById(req.params.id).populate('teacherId', 'username');
-
 
     if (!course) {
       console.log(`[DB] Course not found: ${req.params.id}`);
@@ -63,7 +148,38 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// create new course
+/**
+ * @swagger
+ * /api/courses:
+ *   post:
+ *     summary: Create a new course
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             oneOf:
+ *               - $ref: '#/components/schemas/Course'
+ *               - type: array
+ *                 items:
+ *                   $ref: '#/components/schemas/Course'
+ *     responses:
+ *       201:
+ *         description: Course created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Course'
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
 router.post('/', authenticateToken, authorizeRole(['student', 'teacher']), async (req, res) => {
   try {
     console.log(`[AUTH] User ${req.user.userId} creating new course`);
@@ -103,7 +219,48 @@ router.post('/', authenticateToken, authorizeRole(['student', 'teacher']), async
   }
 });
 
-// PATCH course
+/**
+ * @swagger
+ * /api/courses/{id}:
+ *   patch:
+ *     summary: Update a course
+ *     tags: [Courses]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Course ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               courseName:
+ *                 type: string
+ *               teacherId:
+ *                 type: string
+ *               semester:
+ *                 type: string
+ *               lectures:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       200:
+ *         description: Course updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Course'
+ *       404:
+ *         description: Course not found
+ *       500:
+ *         description: Server error
+ */
 router.patch('/:id', async (req, res) => {
   try {
     console.log(`[DB] Updating course ${req.params.id}`);
@@ -132,7 +289,40 @@ router.patch('/:id', async (req, res) => {
   }
 });
 
-// DELETE course
+/**
+ * @swagger
+ * /api/courses/{id}:
+ *   delete:
+ *     summary: Delete a course and related resources
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Course ID
+ *     responses:
+ *       200:
+ *         description: Course and associated data deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 course:
+ *                   $ref: '#/components/schemas/Course'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Course not found
+ *       500:
+ *         description: Server error
+ */
 router.delete('/:id', authenticateToken, authorizeRole(['student', 'teacher']), async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();

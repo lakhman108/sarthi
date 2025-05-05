@@ -18,6 +18,8 @@
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.15",
     "pocketbase": "^0.21.5",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "tailwindcss": "^3.4.10"
   },
   "name": "sarthi",

@@ -4,6 +4,92 @@ const Enrollment = require('../models/enrollmentmodel');
 const Course = require('../models/coursemodel');
 const { authenticateToken, authorizeRole } = require('../middleware/authMiddleware');
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Enrollment:
+ *       type: object
+ *       required:
+ *         - studentId
+ *         - courseId
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: Auto-generated unique identifier
+ *         studentId:
+ *           type: string
+ *           description: ID of the enrolled student
+ *         courseId:
+ *           type: string
+ *           description: ID of the course the student is enrolled in
+ *         notes:
+ *           type: string
+ *           description: Student's personal notes for the course
+ *         lecturesWatched:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               lectureId:
+ *                 type: string
+ *               watchedDuration:
+ *                 type: number
+ *           description: Tracking data of student's progress through lectures
+ *       example:
+ *         studentId: 60d21b4667d0d8992e610c85
+ *         courseId: 60d21b4667d0d8992e610c86
+ *         notes: "Important concepts to remember: variables, functions, and classes."
+ */
+
+/**
+ * @swagger
+ * tags:
+ *   name: Enrollments
+ *   description: Course enrollment management endpoints
+ */
+
+/**
+ * @swagger
+ * /api/enrollments/join:
+ *   post:
+ *     summary: Join a course using an invite code
+ *     tags: [Enrollments]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - inviteCode
+ *             properties:
+ *               inviteCode:
+ *                 type: string
+ *                 description: Course invite code
+ *     responses:
+ *       201:
+ *         description: Successfully enrolled in the course
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 courseId:
+ *                   type: string
+ *       400:
+ *         description: Already enrolled in this course
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Invalid invite code
+ *       500:
+ *         description: Server error
+ */
 router.post('/join', authenticateToken, authorizeRole(['student', 'teacher']), async (req, res) => {
     try {
         console.log(`[AUTH] User ${req.user.userId} attempting to join course`);
@@ -47,6 +133,38 @@ router.post('/join', authenticateToken, authorizeRole(['student', 'teacher']), a
     }
 });
 
+/**
+ * @swagger
+ * /api/enrollments:
+ *   post:
+ *     summary: Create a new enrollment using class code
+ *     tags: [Enrollments]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - studentId
+ *               - classCode
+ *             properties:
+ *               studentId:
+ *                 type: string
+ *                 description: ID of the student to enroll
+ *               classCode:
+ *                 type: string
+ *                 description: Course class code
+ *     responses:
+ *       201:
+ *         description: Enrollment created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Enrollment'
+ *       500:
+ *         description: Server error
+ */
 router.post('/', async (req, res) => {
     try {
         console.log(`[ENROLL] Creating enrollment with class code: ${req.body.classCode}`);
@@ -70,6 +188,24 @@ router.post('/', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/enrollments:
+ *   get:
+ *     summary: Get all enrollments
+ *     tags: [Enrollments]
+ *     responses:
+ *       200:
+ *         description: List of all enrollments
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Enrollment'
+ *       500:
+ *         description: Server error
+ */
 router.get('/', async (req, res) => {
     try {
         console.log(`[DB] Fetching all enrollments`);
@@ -82,6 +218,33 @@ router.get('/', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/enrollments/{id}:
+ *   get:
+ *     summary: Get all enrollments for a student
+ *     tags: [Enrollments]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Student ID
+ *     responses:
+ *       200:
+ *         description: List of enrollments for the student
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Enrollment'
+ *       404:
+ *         description: No enrollments found
+ *       500:
+ *         description: Server error
+ */
 router.get('/:id', async (req, res) => {
     try {
         console.log(`[DB] Fetching enrollments for student: ${req.params.id}`);
@@ -100,6 +263,35 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/enrollments/{id}/notes:
+ *   get:
+ *     summary: Get course notes for the authenticated user
+ *     tags: [Enrollments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Course ID
+ *     responses:
+ *       200:
+ *         description: Enrollment record with notes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Enrollment'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Enrollment not found
+ *       500:
+ *         description: Server error
+ */
 router.get('/:id/notes', authenticateToken, authorizeRole(['student', 'teacher']), async (req, res) => {
     try {
         console.log(`[AUTH] User ${req.user.userId} requesting notes for course ${req.params.id}`);
@@ -122,6 +314,47 @@ router.get('/:id/notes', authenticateToken, authorizeRole(['student', 'teacher']
     }
 });
 
+/**
+ * @swagger
+ * /api/enrollments/{id}/notes:
+ *   patch:
+ *     summary: Update course notes for the authenticated user
+ *     tags: [Enrollments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Course ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - notes
+ *             properties:
+ *               notes:
+ *                 type: string
+ *                 description: Updated notes content
+ *     responses:
+ *       200:
+ *         description: Notes updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Enrollment'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Enrollment not found
+ *       500:
+ *         description: Server error
+ */
 router.patch('/:id/notes', authenticateToken, authorizeRole(['student', 'teacher']), async (req, res) => {
     try {
         console.log(`[AUTH] User ${req.user.userId} updating notes for course ${req.params.id}`);
@@ -144,6 +377,34 @@ router.patch('/:id/notes', authenticateToken, authorizeRole(['student', 'teacher
     }
 });
 
+/**
+ * @swagger
+ * /api/enrollments/{id}:
+ *   delete:
+ *     summary: Delete an enrollment
+ *     tags: [Enrollments]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Enrollment ID
+ *     responses:
+ *       200:
+ *         description: Enrollment deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       404:
+ *         description: Enrollment not found
+ *       500:
+ *         description: Server error
+ */
 router.delete('/:id', async (req, res) => {
     try {
         console.log(`[DB] Attempting to delete enrollment: ${req.params.id}`);

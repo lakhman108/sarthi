@@ -4,6 +4,93 @@ const Lecture = require("../models/lecturemodel.js");
 const fs = require("fs");
 const { authenticateToken, authorizeRole } = require('../middleware/authMiddleware');
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Comment:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: Auto-generated unique identifier
+ *         userId:
+ *           type: string
+ *           description: ID of the user who made the comment
+ *         text:
+ *           type: string
+ *           description: Comment content
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           description: Comment creation timestamp
+ *       example:
+ *         userId: 60d21b4667d0d8992e610c85
+ *         text: This lecture was very informative!
+ *         createdAt: 2025-05-05T12:00:00Z
+ * 
+ *     Lecture:
+ *       type: object
+ *       required:
+ *         - nameOfTopic
+ *         - courseId
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: Auto-generated unique identifier
+ *         nameOfTopic:
+ *           type: string
+ *           description: Name/title of the lecture
+ *         courseId:
+ *           type: string
+ *           description: ID of the course this lecture belongs to
+ *         videoLink:
+ *           type: string
+ *           description: URL to the lecture video
+ *         noOfLikes:
+ *           type: number
+ *           description: Number of likes for this lecture
+ *         noOfViews:
+ *           type: number
+ *           description: Number of views for this lecture
+ *         comments:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/Comment'
+ *           description: Comments made on this lecture
+ *       example:
+ *         nameOfTopic: Introduction to Variables
+ *         courseId: 60d21b4667d0d8992e610c85
+ *         videoLink: http://example.com/api/hls/videos/lecture1/master.m3u8
+ *         noOfLikes: 42
+ *         noOfViews: 156
+ */
+
+/**
+ * @swagger
+ * tags:
+ *   name: Lectures
+ *   description: Lecture management endpoints
+ */
+
+/**
+ * @swagger
+ * /api/lectures:
+ *   get:
+ *     summary: Get all lectures
+ *     tags: [Lectures]
+ *     responses:
+ *       200:
+ *         description: List of all lectures
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Lecture'
+ *       500:
+ *         description: Server error
+ */
 router.get("/", async (req, res) => {
     try {
         console.log(`[DB] Fetching all lectures`);
@@ -16,6 +103,31 @@ router.get("/", async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/lectures/{id}:
+ *   get:
+ *     summary: Get lecture by ID
+ *     tags: [Lectures]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Lecture ID
+ *     responses:
+ *       200:
+ *         description: Lecture details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Lecture'
+ *       404:
+ *         description: Lecture not found
+ *       500:
+ *         description: Server error
+ */
 router.get("/:id", async (req, res) => {
     try {
         console.log(`[DB] Fetching lecture: ${req.params.id}`);
@@ -33,6 +145,34 @@ router.get("/:id", async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/lectures/{id}:
+ *   delete:
+ *     summary: Delete a lecture
+ *     tags: [Lectures]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Lecture ID
+ *     responses:
+ *       200:
+ *         description: Lecture successfully deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       404:
+ *         description: Lecture not found
+ *       500:
+ *         description: Server error
+ */
 router.delete("/:id", async (req, res) => {
     try {
         console.log(`[DB] Attempting to delete lecture: ${req.params.id}`);
@@ -65,6 +205,31 @@ router.delete("/:id", async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/lectures/course/{courseId}:
+ *   get:
+ *     summary: Get all lectures for a specific course
+ *     tags: [Lectures]
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Course ID
+ *     responses:
+ *       200:
+ *         description: List of lectures for the specified course
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Lecture'
+ *       500:
+ *         description: Server error
+ */
 router.get("/course/:courseId", async (req, res) => {
     try {
         console.log(`[DB] Fetching lectures for course: ${req.params.courseId}`);
@@ -78,6 +243,34 @@ router.get("/course/:courseId", async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/lectures:
+ *   post:
+ *     summary: Create one or more lectures
+ *     tags: [Lectures]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             oneOf:
+ *               - $ref: '#/components/schemas/Lecture'
+ *               - type: array
+ *                 items:
+ *                   $ref: '#/components/schemas/Lecture'
+ *     responses:
+ *       201:
+ *         description: Lecture(s) created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Lecture'
+ *       500:
+ *         description: Server error
+ */
 router.post("/", async (req, res) => {
     try {
         console.log(`[LECTURE] Creating new lecture(s)`);
@@ -105,6 +298,31 @@ router.post("/", async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/lectures/{id}/like:
+ *   patch:
+ *     summary: Increment the like count for a lecture
+ *     tags: [Lectures]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Lecture ID
+ *     responses:
+ *       200:
+ *         description: Like count incremented successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Lecture'
+ *       404:
+ *         description: Lecture not found
+ *       500:
+ *         description: Server error
+ */
 router.patch("/:id/like", async (req, res) => {
     try {
         console.log(`[LIKE] Processing like for lecture: ${req.params.id}`);
@@ -128,6 +346,31 @@ router.patch("/:id/like", async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/lectures/{id}/view:
+ *   patch:
+ *     summary: Increment the view count for a lecture
+ *     tags: [Lectures]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Lecture ID
+ *     responses:
+ *       200:
+ *         description: View count incremented successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Lecture'
+ *       404:
+ *         description: Lecture not found
+ *       500:
+ *         description: Server error
+ */
 router.patch("/:id/view", async (req, res) => {
     try {
         console.log(`[VIEW] Processing view for lecture: ${req.params.id}`);
@@ -151,6 +394,33 @@ router.patch("/:id/view", async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/lectures/{id}/comments:
+ *   get:
+ *     summary: Get all comments for a lecture
+ *     tags: [Lectures]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Lecture ID
+ *     responses:
+ *       200:
+ *         description: List of comments for the lecture
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Comment'
+ *       404:
+ *         description: Lecture not found
+ *       500:
+ *         description: Server error
+ */
 router.get("/:id/comments", async (req, res) => {
     try {
         console.log(`[COMMENT] Fetching comments for lecture: ${req.params.id}`);
@@ -173,6 +443,49 @@ router.get("/:id/comments", async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/lectures/{lectureid}/comments:
+ *   post:
+ *     summary: Add a comment to a lecture
+ *     tags: [Lectures]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: lectureid
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Lecture ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - text
+ *             properties:
+ *               text:
+ *                 type: string
+ *                 description: The comment text
+ *     responses:
+ *       200:
+ *         description: Comment added successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Comment'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Lecture not found
+ *       500:
+ *         description: Server error
+ */
 router.post('/:lectureid/comments', authenticateToken, authorizeRole(['student', 'teacher']), async (req, res) => {
     try {
         console.log(`[AUTH] User ${req.user.userId} adding comment to lecture: ${req.params.lectureid}`);
@@ -205,6 +518,47 @@ router.post('/:lectureid/comments', authenticateToken, authorizeRole(['student',
     }
 });
 
+/**
+ * @swagger
+ * /api/lectures/{id}/update:
+ *   patch:
+ *     summary: Update lecture information
+ *     tags: [Lectures]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Lecture ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nameOfTopic:
+ *                 type: string
+ *                 description: Updated lecture title/topic name
+ *               videoLink:
+ *                 type: string
+ *                 description: Updated video link
+ *     responses:
+ *       200:
+ *         description: Lecture updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       404:
+ *         description: Lecture not found
+ *       500:
+ *         description: Server error
+ */
 router.patch("/:id/update", async (req, res) => {
     try {
         console.log(`[LECTURE] Updating lecture: ${req.params.id}`);

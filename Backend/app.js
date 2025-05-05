@@ -7,6 +7,8 @@ const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 3000;
 const path = require('path');
+const { swaggerUi, swaggerSpec } = require('./swagger');
+
 const coreOptions = {
   origin: process.env.FRONTEND_HOST,
   optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
@@ -25,6 +27,9 @@ db.once('open', function() {
 
 // Middleware
 app.use(bodyParser.json());
+
+// Swagger Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
 
 // Routes
 const userRoutes = require('./routes/user');
