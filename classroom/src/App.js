@@ -10,11 +10,10 @@ import Loader from './components/layout/Loader';
 import NotFound from './components/Auth/NotFound';
 import ShareClassroom from './components/ShareClassroom';
 import JoinClassroomWithQr from './utils/JoinClassroomWithQr';
+import VerifyEmailPage from './components/Auth/VerifyEmailPage';
+
 function App() {
   const { isAuthenticated, loading } = useContext(UserContext);
-
-//   console.log("isAuthenticated:", isAuthenticated);
-//   console.log("loading:", loading);
 
   const ProtectedRoute = ({ children }) => {
     if (loading) {
@@ -33,11 +32,12 @@ function App() {
         <Route path="/join/:inviteCode" element={<JoinClassroomWithQr />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/classroom" element={<ProtectedRoute><ClassroomUI /></ProtectedRoute>} />
         <Route path="/classroom/:id" element={<ProtectedRoute><ClassUI /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+        <Route path="/share/:id" element={<ProtectedRoute><ShareClassroom /></ProtectedRoute>} />
         <Route path="/" element={isAuthenticated ? <Navigate to="/classroom" replace /> : <Navigate to="/login" replace />} />
-
         <Route path="*" element={<NotFound />} />
       </Routes>
     </div>

@@ -7,6 +7,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { UserContext } from '../../context/Usercontex';
 import axios from 'axios';
+import OTPVerification from './OTPVerification';
 
 
 const InputField = ({ icon: Icon, ...props }) => (
@@ -72,6 +73,7 @@ const AuthForm = ({ isLogin }) => {
         password: '',
         role: 'student'
     });
+    const [showOTPVerification, setShowOTPVerification] = useState(false);
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -112,14 +114,28 @@ const AuthForm = ({ isLogin }) => {
             if (isLogin) {
                 const loginResponse = await login(formData);
                 const { token } = loginResponse.data;
+
+                // Check if verification is required
+                if (loginResponse.data.requiresVerification) {
+                    toast.info(loginResponse.data.message || 'Please verify your email');
+                    setShowOTPVerification(true);
+                    return;
+                }
+
                 const user = await fetchUserData(token);
                 handleLoginSuccess(token, user);
             } else {
                 const registerResponse = await register(formData);
-                if (registerResponse.status === 201) {
-                    toast.success('Registration successful! Please log in.');
-                    setTimeout(() => navigate('/login'), 1500);
+
+                // Check if registration needs verification
+                if (registerResponse.data.requiresVerification) {
+                    toast.success('Registration successful! Please verify your email with the OTP sent.');
+                    setShowOTPVerification(true);
+                    return;
                 }
+
+                toast.success('Registration successful! Please log in.');
+                setTimeout(() => navigate('/login'), 1500);
             }
         } catch (error) {
             handleError(error, isLogin ? 'Login failed' : 'Registration failed');
@@ -127,10 +143,29 @@ const AuthForm = ({ isLogin }) => {
     };
 
     const handleError = (error, defaultMessage) => {
+        // If account not verified error, show OTP verification
+        if (error.response?.data?.requiresVerification) {
+            toast.info(error.response.data.message || 'Please verify your email');
+            setShowOTPVerification(true);
+            return;
+        }
+
         const errorMessage = error.response?.data?.error || defaultMessage;
         toast.error(`${errorMessage}. Please try again.`);
         console.error(error);
     };
+
+    const handleBackFromOTP = () => {
+        setShowOTPVerification(false);
+    };
+
+    if (showOTPVerification) {
+        return <OTPVerification
+            email={formData.email}
+            onBack={handleBackFromOTP}
+            isAfterLogin={isLogin}
+        />;
+    }
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">

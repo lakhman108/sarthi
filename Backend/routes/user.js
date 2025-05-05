@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { register, login } = require('../controllers/authController');
+const { register, login, verifyOTP, resendOTP } = require('../controllers/authController');
 const { authenticateToken, authorizeRole } = require('../middleware/authMiddleware');
 const userController = require('../controllers/userController.js');
 
@@ -34,12 +34,16 @@ const userController = require('../controllers/userController.js');
  *         profilePicture:
  *           type: string
  *           description: URL to user's profile picture
+ *         isVerified:
+ *           type: boolean
+ *           description: Whether the user's email has been verified
  *       example:
  *         name: John Doe
  *         email: john@example.com
  *         password: hashedpassword123
  *         role: student
  *         profilePicture: https://example.com/profile.jpg
+ *         isVerified: true
  */
 
 /**
@@ -120,6 +124,72 @@ router.post('/register', register);
  *         description: Invalid credentials
  */
 router.post('/login', login);
+
+/**
+ * @swagger
+ * /api/users/verify-otp:
+ *   post:
+ *     summary: Verify OTP for email verification
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - otp
+ *             properties:
+ *               email:
+ *                 type: string
+ *               otp:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Email verified successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 token:
+ *                   type: string
+ *       400:
+ *         description: Invalid OTP
+ *       404:
+ *         description: User not found
+ */
+router.post('/verify-otp', verifyOTP);
+
+/**
+ * @swagger
+ * /api/users/resend-otp:
+ *   post:
+ *     summary: Resend OTP for email verification
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: New OTP sent successfully
+ *       400:
+ *         description: User already verified
+ *       404:
+ *         description: User not found
+ */
+router.post('/resend-otp', resendOTP);
 
 /**
  * @swagger

@@ -7,7 +7,10 @@ const userSchema = new mongoose.Schema({
   dateJoined: { type: Date, default: Date.now },
   profilePictureImageLink: String,
   email: { type: String, required: true, unique: true },
-  role: { type: String, enum: ['student', 'teacher'], required: true }
+  role: { type: String, enum: ['student', 'teacher'], required: true },
+  isVerified: { type: Boolean, default: false },
+  otp: { type: String },
+  otpExpires: { type: Date }
 });
 
 // Middleware to hash the password before saving

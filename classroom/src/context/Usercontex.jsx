@@ -8,6 +8,7 @@ export const UserProvider = (props) => {
     const [user, setUser] = useState({});
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [requiresVerification, setRequiresVerification] = useState(false);
     const savedToken = Cookies.get('token');
 
     useEffect(() => {
@@ -20,14 +21,20 @@ export const UserProvider = (props) => {
                         },
                     });
                     const userData = response.data;
-                    // console.log(userData);
                     setIsAuthenticated(true);
                     setUser(userData);
+                    setRequiresVerification(false);
                 } catch (error) {
                     console.error('Error fetching user data:', error);
-                    setIsAuthenticated(false);
-                    setUser({});
-                    Cookies.remove('token'); // Remove invalid token
+
+                    // Check if the error is due to unverified account
+                    if (error.response?.data?.requiresVerification) {
+                        setRequiresVerification(true);
+                    } else {
+                        setIsAuthenticated(false);
+                        setUser({});
+                        Cookies.remove('token'); // Remove invalid token
+                    }
                 }
             } else {
                 setIsAuthenticated(false);
@@ -40,7 +47,15 @@ export const UserProvider = (props) => {
     }, [savedToken]);
 
     return (
-        <UserContext.Provider value={{ user, setUser, isAuthenticated, setIsAuthenticated, loading }}>
+        <UserContext.Provider value={{
+            user,
+            setUser,
+            isAuthenticated,
+            setIsAuthenticated,
+            loading,
+            requiresVerification,
+            setRequiresVerification
+        }}>
             {props.children}
         </UserContext.Provider>
     );
