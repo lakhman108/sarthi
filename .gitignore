@@ -5,6 +5,9 @@ node_modules/
 build/
 dist/
 
+
+
+
 # Environment variables
 .env
 
@@ -18,7 +21,8 @@ logs/
 # Dependency lock files
 package-lock.json
 yarn.lock
-
+sarthi-presentation.md
+interview.md
 # Testing
 coverage/
 

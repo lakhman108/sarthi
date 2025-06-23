@@ -4,105 +4,27 @@ const multer = require('multer');
 const { exec } = require('child_process');
 const fs = require('fs');
 
-const app = express.Router();
-let videoName;
 
-// For sanitizing file names
-// This function replaces spaces with dashes, removes special characters,
-// and ensures the filename is lowercase
-const sanitizeFileName = (fileName) => {
-  return fileName
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '')
-    .replace(/-+/g, '-')
-    .replace(/^-+|-+$/g, '');
-};
-
-// Set up multer for file uploads
-const storageEngine = multer.diskStorage({
-  destination: './public/uploads/',
-  filename: function (req, file, callback) {
-    const sanitizedName = sanitizeFileName(file.originalname);
-    console.log('Original filename:', file.originalname);
-    console.log('Sanitized filename:', sanitizedName);
-    callback(null, sanitizedName);
-  },
-});
-
-// File filter to only accept specific video file types
-const fileFilter = (req, file, callback) => {
-  const validTypes = /mp4|MOV|m4v/;
-  const isValid = validTypes.test(path.extname(file.originalname));
-  console.log('File validation:', {
-    originalName: file.originalname,
-    mimeType: file.mimetype,
-    isValid
-  });
-
-  if (isValid) {
-    callback(null, true);
-  } else {
-    callback(new Error('Invalid file type. Only MP4, MOV, M4V allowed'));
+// Option 2: Using Bull with Redis (uncomment if you want to use Redis)
+const Queue = require('bull');
+const videoProcessingQueue = new Queue('video processing', {
+  redis: {
+    host: '127.0.0.1',
+    port: 6379,
   }
-};
-
-// Initialize multer with the storage engine and file filter
-const upload = multer({
-  storage: storageEngine,
-  fileFilter: fileFilter,
 });
 
-// Helper function to create directories
-const createDirectories = (outputDir, resolutions) => {
-  fs.mkdirSync(outputDir, { recursive: true });
-  resolutions.forEach(res => {
-    const resPath = `${outputDir}/${res}`;
-    fs.mkdirSync(resPath, { recursive: true });
-    console.log(`Created resolution directory: ${resPath}`);
-  });
-};
+const app = express.Router();
 
-// Helper function to generate master playlist
-const generateMasterPlaylist = (outputDir, resolutions) => {
-  const playlistContent = `#EXTM3U
-${resolutions.map(res => {
-  const [width, height] = res === '240p' ? [426, 240] :
-                         res === '360p' ? [640, 360] :
-                         [1280, 720];
-  const bandwidth = res === '240p' ? 400000 :
-                   res === '360p' ? 800000 :
-                   2800000;
-  return `#EXT-X-STREAM-INF:BANDWIDTH=${bandwidth},RESOLUTION=${width}x${height}
-${res}/stream_${res}.m3u8`;
-}).join('\n')}`;
 
-  fs.writeFileSync(`${outputDir}/master.m3u8`, playlistContent);
-};
+// If using Bull with Redis, uncomment this:
+videoProcessingQueue.process('process-video',2, async (job) => {
+  const { filePath, videoName, outputDir, resolutions } = job.data;
+  return await processVideo(filePath, videoName, outputDir, resolutions);
+});
 
-// Endpoint to handle video upload and processing
-// This endpoint receives a video file, processes it with ffmpeg,
-// and generates HLS streams for different resolutions
-// It also generates a master playlist for adaptive streaming
-// The processed video files are stored in the public/hls directory
-// The endpoint returns the URL of the master playlist
-
-app.post('/', upload.single('uploadedFile'), async (req, res) => {
+const processVideo = async (filePath, videoName, outputDir, resolutions) => {
   try {
-    if (!req.file) {
-      console.error('[ERROR] No file uploaded');
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
-
-    const filePath = req.file.path;
-    console.log('[UPLOAD] File received:', filePath);
-
-    videoName = sanitizeFileName(path.parse(req.file.originalname).name);
-    console.log('[PROCESS] Sanitized video name:', videoName);
-
-    const outputDir = `./public/hls/${videoName}`;
-    const resolutions = ['240p', '360p', '720p'];
-
     // Create output directories
     createDirectories(outputDir, resolutions);
     console.log('[SETUP] Created output directories in:', outputDir);
@@ -120,7 +42,7 @@ app.post('/', upload.single('uploadedFile'), async (req, res) => {
       const config = resolutionConfigs[res];
       const outputPath = path.join(outputDir, res);
 
-      const ffmpegCommand = `ffmpeg -i ${filePath} \
+      const ffmpegCommand = `ffmpeg -i "${filePath}" \
         -vf scale=${config.scale} \
         -c:v h264 -profile:v main -preset fast \
         -b:v ${config.bitrate} -maxrate ${config.maxrate} -bufsize ${config.bufsize} \
@@ -136,8 +58,8 @@ app.post('/', upload.single('uploadedFile'), async (req, res) => {
         let segmentCount = 0;
 
         // Track progress using segment creation
-        fs.watch(outputPath, (eventType, filename) => {
-          if (eventType === 'rename' && filename.endsWith('.ts')) {
+        const watcher = fs.watch(outputPath, (eventType, filename) => {
+          if (eventType === 'rename' && filename && filename.endsWith('.ts')) {
             segmentCount++;
             console.log(`[PROGRESS] ${res}: Created segment #${segmentCount}`);
           }
@@ -162,10 +84,12 @@ app.post('/', upload.single('uploadedFile'), async (req, res) => {
 
         process.on('error', (error) => {
           console.error(`[ERROR] ${res} process error:`, error);
+          watcher.close(); // Close file watcher
           reject(error);
         });
 
         process.on('exit', (code) => {
+          watcher.close(); // Close file watcher
           if (code === 0) {
             console.log(`[SUCCESS] ${res} conversion complete - Created ${segmentCount} segments`);
             resolve();
@@ -184,14 +108,146 @@ app.post('/', upload.single('uploadedFile'), async (req, res) => {
 
     // Cleanup
     console.log('[CLEANUP] Removing temporary files...');
-    fs.unlinkSync(filePath);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
 
     const masterUrl = `${process.env.HOST}/api/hls/${videoName}/master.m3u8`;
     console.log('[COMPLETE] Master playlist URL:', masterUrl);
+    return {
+      masterUrl: masterUrl
+    };
+  } catch (error) {
+    console.error('[ERROR] video processing failed', error);
+    throw error;
+  }
+};
+
+// For sanitizing file names
+// This function replaces spaces with dashes, removes special characters,
+// and ensures the filename is lowercase
+const sanitizeFileName = (fileName) => {
+  return fileName
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9.-]/g, '') // Allow dots for file extensions
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+};
+
+// Set up multer for file uploads
+const storageEngine = multer.diskStorage({
+  destination: './public/uploads/',
+  filename: function (req, file, callback) {
+    const sanitizedName = sanitizeFileName(file.originalname);
+    console.log('Original filename:', file.originalname);
+    console.log('Sanitized filename:', sanitizedName);
+    callback(null, sanitizedName);
+  },
+});
+
+// File filter to only accept specific video file types
+const fileFilter = (req, file, callback) => {
+  const validTypes = /\.(mp4|mov|m4v)$/i; // Fixed regex
+  const isValid = validTypes.test(file.originalname);
+  console.log('File validation:', {
+    originalName: file.originalname,
+    mimeType: file.mimetype,
+    isValid
+  });
+
+  if (isValid) {
+    callback(null, true);
+  } else {
+    callback(new Error('Invalid file type. Only MP4, MOV, M4V allowed'));
+  }
+};
+
+// Initialize multer with the storage engine and file filter
+const upload = multer({
+  storage: storageEngine,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 500 * 1024 * 1024 // 500MB limit
+  }
+});
+
+// Helper function to create directories
+const createDirectories = (outputDir, resolutions) => {
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+  resolutions.forEach(res => {
+    const resPath = `${outputDir}/${res}`;
+    if (!fs.existsSync(resPath)) {
+      fs.mkdirSync(resPath, { recursive: true });
+      console.log(`Created resolution directory: ${resPath}`);
+    }
+  });
+};
+
+// Helper function to generate master playlist
+const generateMasterPlaylist = (outputDir, resolutions) => {
+  const playlistContent = `#EXTM3U
+#EXT-X-VERSION:3
+${resolutions.map(res => {
+  const [width, height] = res === '240p' ? [426, 240] :
+                         res === '360p' ? [640, 360] :
+                         [1280, 720];
+  const bandwidth = res === '240p' ? 928000 : // Updated bandwidth values
+                   res === '360p' ? 1528000 :
+                   3328000;
+  return `#EXT-X-STREAM-INF:BANDWIDTH=${bandwidth},RESOLUTION=${width}x${height}
+${res}/stream_${res}.m3u8`;
+}).join('\n')}`;
+
+  fs.writeFileSync(`${outputDir}/master.m3u8`, playlistContent);
+  console.log('[PLAYLIST] Master playlist generated successfully');
+};
+
+// Endpoint to handle video upload and processing
+// This endpoint receives a video file, processes it with ffmpeg,
+// and generates HLS streams for different resolutions
+// It also generates a master playlist for adaptive streaming
+// The processed video files are stored in the public/hls directory
+// The endpoint returns the URL of the master playlist
+
+app.post('/', upload.single('uploadedFile'), async (req, res) => {
+  try {
+    if (!req.file) {
+      console.error('[ERROR] No file uploaded');
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const jobId = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    const videoName = `${sanitizeFileName(path.parse(req.file.originalname).name)}_${jobId}`;
+
+    const filePath = req.file.path;
+    console.log('[UPLOAD] File received:', filePath);
+
+    console.log('[PROCESS] Sanitized video name:', videoName);
+
+    const outputDir = `./public/hls/${videoName}`;
+    const resolutions = ['240p', '360p', '720p'];
+
+    // Add job to queue
+    const job = await videoProcessingQueue.add('process-video', {
+      filePath: filePath,
+      videoName,
+      outputDir: outputDir,
+      resolutions: resolutions
+    });
+
+    console.log(`[QUEUE] Job ${job.id} added to queue`);
+
+    // Wait for job to complete
+    const result = await job.finished();
+
+    console.log('[COMPLETE] Job finished', result);
 
     res.status(200).json({
       message: 'Video processing completed successfully',
-      masterPlaylist: masterUrl,
+      masterPlaylist: result.masterUrl,
       processedFileName: videoName
     });
 

@@ -1,10 +1,12 @@
 {
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.817.0",
     "@bunnynet/stream": "^0.1.0",
     "aws-sdk": "^2.1691.0",
     "axios": "^1.7.9",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.2",
+    "bull": "^4.16.5",
     "cors": "^2.8.5",
     "dependencies": "^0.0.1",
     "dotenv": "^16.4.5",
@@ -27,6 +29,7 @@
   "description": "sarthi",
   "main": "app.js",
   "scripts": {
+    "start": "node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
