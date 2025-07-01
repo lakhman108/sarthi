@@ -1,6 +1,6 @@
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
-
+require('dotenv').config();
 // Swagger definition
 const swaggerOptions = {
   definition: {
@@ -17,7 +17,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: 'http://localhost:3000',
+        url: process.env.HOST,
         description: 'Development server',
       },
     ],

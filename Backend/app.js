@@ -8,7 +8,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 const path = require('path');
 const { swaggerUi, swaggerSpec } = require('./swagger');
-
+const { rateLimit }=require('express-rate-limit');
 const coreOptions = {
   origin: process.env.FRONTEND_HOST,
   optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
@@ -24,6 +24,18 @@ db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function() {
   console.log('Connected to MongoDB successfully!');
 });
+
+// Rate Limiter
+
+const limiter = rateLimit({
+	windowMs: 15 * 60 * 1000, // 15 minutes
+	limit: process.env.LIMIT, // Limit each IP to 100 requests per `window` (here, per 15 minutes).
+	standardHeaders: 'draft-8', // draft-6: `RateLimit-*` headers; draft-7 & draft-8: combined `RateLimit` header
+	legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
+})
+
+// Applying the rate limiting middleware to all requests.
+app.use(limiter)
 
 // Middleware
 app.use(bodyParser.json());

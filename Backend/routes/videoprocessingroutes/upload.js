@@ -7,12 +7,7 @@ const fs = require('fs');
 
 // Option 2: Using Bull with Redis (uncomment if you want to use Redis)
 const Queue = require('bull');
-const videoProcessingQueue = new Queue('video processing', {
-  redis: {
-    host: '127.0.0.1',
-    port: 6379,
-  }
-});
+const videoProcessingQueue = new Queue('video processing',process.env.REDIS_URL);
 
 const app = express.Router();
 
