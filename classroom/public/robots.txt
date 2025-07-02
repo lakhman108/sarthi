@@ -1,3 +1,44 @@
 # https://www.robotstxt.org/robotstxt.html
+
+# Allow all web crawlers to access all content
 User-agent: *
 Disallow:
+Crawl-delay: 1
+
+# Specific rules for major search engines
+User-agent: Googlebot
+Crawl-delay: 1
+Allow: /
+
+User-agent: Bingbot
+Crawl-delay: 2
+Allow: /
+
+# Block aggressive crawlers and scrapers
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+# Block common bot paths that might exist
+Disallow: /api/
+Disallow: /admin/
+Disallow: /private/
+Disallow: /*.json$
+Disallow: /static/js/
+Disallow: /static/css/
+
+# Allow important static assets
+Allow: /static/media/
+Allow: /favicon.ico
+Allow: /manifest.json
+
+# Sitemap location
+Sitemap: https://sarthi-zeta.vercel.app/sitemap.xml
+
+# Host directive (helps with canonical URLs)
+Host: https://sarthi-zeta.vercel.app
