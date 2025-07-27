@@ -9,10 +9,25 @@ const port = process.env.PORT || 3000;
 const path = require('path');
 const { swaggerUi, swaggerSpec } = require('./swagger');
 const { rateLimit }=require('express-rate-limit');
+
+const allowedOrigins = process.env.FRONTEND_HOST
+  ? process.env.FRONTEND_HOST.split(',').map(origin => origin.trim())
+  : [];
+
 const coreOptions = {
-  origin: process.env.FRONTEND_HOST,
-  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true); // allow non-browser requests
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  optionsSuccessStatus: 200 // legacy browser support
 };
+
+
 console.log(coreOptions);
 app.use(cors(coreOptions));
 // Connect to MongoDB

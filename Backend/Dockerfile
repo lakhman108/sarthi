@@ -1,7 +1,7 @@
-# // filepath: /workspaces/sarthi/Backend/Dockerfile
+
 FROM node:20-alpine
 
-WORKDIR /app 
+WORKDIR /app
 
 # Install FFmpeg
 RUN apk update && apk add ffmpeg

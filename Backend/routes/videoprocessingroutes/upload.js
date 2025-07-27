@@ -3,7 +3,7 @@ const path = require('path');
 const multer = require('multer');
 const { exec } = require('child_process');
 const fs = require('fs');
-
+const {uploadToS3,cleanupLocalFiles}=require('./cloud.js')
 
 // Option 2: Using Bull with Redis (uncomment if you want to use Redis)
 const Queue = require('bull');
@@ -237,12 +237,15 @@ app.post('/', upload.single('uploadedFile'), async (req, res) => {
 
     // Wait for job to complete
     const result = await job.finished();
-
-    console.log('[COMPLETE] Job finished', result);
+    const s3FolderPath = `hls-videos/${videoName}`;
+    const s3Result = await uploadToS3(outputDir, s3FolderPath);
+    console.log('[COMPLETE] Job finished', s3Result);
+    console.log('[CLEANUP] Removing local HLS files...');
+    cleanupLocalFiles(outputDir);
 
     res.status(200).json({
       message: 'Video processing completed successfully',
-      masterPlaylist: result.masterUrl,
+      masterPlaylist: s3Result.masterPlaylistUrl,
       processedFileName: videoName
     });
 
