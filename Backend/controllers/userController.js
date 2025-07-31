@@ -2,13 +2,12 @@ const User = require('../models/usermodel');
 
 const multer = require('multer');
 const path = require('path');
+const AWS = require('aws-sdk');
 
-// Set up multer for file uploads
-const storageEngine = multer.diskStorage({
-  destination: './public/hls/profilePictures/',
-  filename: function (req, file, callback) {
-    callback(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
-  },
+const s3 = new AWS.S3({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION || 'us-east-1'
 });
 
 // File filter to only accept only jpg,jpeg,png,gif file types
@@ -23,7 +22,10 @@ const fileFilter = (req, file, callback) => {
 
 // Initialize multer with the storage engine and file filter
 const upload = multer({
-  storage: storageEngine,
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // limit file size to 5MB
+  },
   fileFilter: fileFilter,
 });
 
@@ -31,20 +33,39 @@ const upload = multer({
 const uploadProfilePicture = (req, res) => {
     console.log(`[FILE] Starting profile picture upload`);
     return new Promise((resolve, reject) => {
-      upload.single('profilePicture')(req, res, (err) => {
-        if (err) {
-          console.error(`[ERROR] File upload failed:`, err);
-          reject(err);
-        } else if (!req.file) {
-          console.error(`[ERROR] No file provided in request`);
-          reject(new Error('No file uploaded'));
-        } else {
-          console.log(`[FILE] Upload successful: ${req.file.filename}`);
-          const fileUrl = `${process.env.HOST}/api/hls/profilePictures/${req.file.filename}`;
-          console.log(`[FILE] Generated URL: ${fileUrl}`);
-          resolve(fileUrl);
-        }
-      });
+        upload.single('profilePicture')(req, res, (err) => {
+            if (err) {
+                console.error(`[FILE] Multer error:`, err);
+                return reject(err);
+            }
+
+            if (!req.file) {
+                console.error(`[FILE] No file provided`);
+                return reject(new Error('No file provided'));
+            }
+
+            // Generate unique filename to avoid conflicts
+            const timestamp = Date.now();
+            const fileExtension = path.extname(req.file.originalname);
+            const uniqueFileName = `profile-${req.user.userId}-${timestamp}${fileExtension}`;
+
+            const params = {
+                Bucket: process.env.AWS_S3_BUCKET_NAME,
+                Key: uniqueFileName,
+                Body: req.file.buffer,
+                ContentType: req.file.mimetype,
+            };
+
+            s3.upload(params, (err, data) => {
+                if (err) {
+                    console.error(`[S3] Upload error:`, err);
+                    return reject(err);
+                }
+
+                console.log(`[S3] File uploaded successfully: ${data.Location}`);
+                resolve(data.Location); // Return the S3 URL
+            });
+        });
     });
 };
 
