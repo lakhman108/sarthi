@@ -7,7 +7,9 @@ const AWS = require('aws-sdk');
 const s3 = new AWS.S3({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION || 'us-east-1'
+  endpoint: process.env.MINIO_BROWSER_REDIRECT_URL,
+  s3ForcePathStyle: true, // Required for MinIO
+  signatureVersion: 'v4'
 });
 
 // File filter to only accept only jpg,jpeg,png,gif file types
@@ -58,12 +60,12 @@ const uploadProfilePicture = (req, res) => {
 
             s3.upload(params, (err, data) => {
                 if (err) {
-                    console.error(`[S3] Upload error:`, err);
+                    console.error(`[MINIO] Upload error:`, err);
                     return reject(err);
                 }
 
-                console.log(`[S3] File uploaded successfully: ${data.Location}`);
-                resolve(data.Location); // Return the S3 URL
+                console.log(`[MINIO] File uploaded successfully: ${data.Location}`);
+                resolve(data.Location); // Return the MinIO URL
             });
         });
     });

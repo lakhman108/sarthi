@@ -3,17 +3,17 @@ const path = require('path');
 const multer = require('multer');
 const { exec } = require('child_process');
 const fs = require('fs');
-const {uploadToS3,cleanupLocalFiles}=require('./cloud.js')
+const { uploadToMinIO, cleanupLocalFiles } = require('./cloud.js')
 
 // Option 2: Using Bull with Redis (uncomment if you want to use Redis)
 const Queue = require('bull');
-const videoProcessingQueue = new Queue('video processing',process.env.REDIS_URL);
+const videoProcessingQueue = new Queue('video processing', process.env.REDIS_URL);
 
 const app = express.Router();
 
 
 // If using Bull with Redis, uncomment this:
-videoProcessingQueue.process('process-video',2, async (job) => {
+videoProcessingQueue.process('process-video', 2, async (job) => {
   const { filePath, videoName, outputDir, resolutions } = job.data;
   return await processVideo(filePath, videoName, outputDir, resolutions);
 });
@@ -186,15 +186,15 @@ const generateMasterPlaylist = (outputDir, resolutions) => {
   const playlistContent = `#EXTM3U
 #EXT-X-VERSION:3
 ${resolutions.map(res => {
-  const [width, height] = res === '240p' ? [426, 240] :
-                         res === '360p' ? [640, 360] :
-                         [1280, 720];
-  const bandwidth = res === '240p' ? 928000 : // Updated bandwidth values
-                   res === '360p' ? 1528000 :
-                   3328000;
-  return `#EXT-X-STREAM-INF:BANDWIDTH=${bandwidth},RESOLUTION=${width}x${height}
+    const [width, height] = res === '240p' ? [426, 240] :
+      res === '360p' ? [640, 360] :
+        [1280, 720];
+    const bandwidth = res === '240p' ? 928000 : // Updated bandwidth values
+      res === '360p' ? 1528000 :
+        3328000;
+    return `#EXT-X-STREAM-INF:BANDWIDTH=${bandwidth},RESOLUTION=${width}x${height}
 ${res}/stream_${res}.m3u8`;
-}).join('\n')}`;
+  }).join('\n')}`;
 
   fs.writeFileSync(`${outputDir}/master.m3u8`, playlistContent);
   console.log('[PLAYLIST] Master playlist generated successfully');
@@ -236,23 +236,54 @@ app.post('/', upload.single('uploadedFile'), async (req, res) => {
     console.log(`[QUEUE] Job ${job.id} added to queue`);
 
     // Wait for job to complete
-    const result = await job.finished();
-    const s3FolderPath = `hls-videos/${videoName}`;
-    const s3Result = await uploadToS3(outputDir, s3FolderPath);
-    console.log('[COMPLETE] Job finished', s3Result);
-    console.log('[CLEANUP] Removing local HLS files...');
-    cleanupLocalFiles(outputDir);
+    try {
+      const result = await job.finished();
 
-    res.status(200).json({
-      message: 'Video processing completed successfully',
-      masterPlaylist: s3Result.masterPlaylistUrl,
-      processedFileName: videoName
-    });
+      const s3FolderPath = `hls-videos/${videoName}`;
+      let minioResult;
+      try {
+        minioResult = await uploadToMinIO(outputDir, s3FolderPath);
+      } catch (uploadError) {
+        console.error('[ERROR] Storage/Upload failed:', uploadError);
+        throw new Error('STORAGE_ERROR: ' + uploadError.message);
+      }
+
+      console.log('[COMPLETE] Job finished', minioResult);
+      console.log('[CLEANUP] Removing local HLS files...');
+      cleanupLocalFiles(outputDir);
+
+      res.status(200).json({
+        message: 'Video processing completed successfully',
+        masterPlaylist: minioResult.masterPlaylistUrl,
+        processedFileName: videoName
+      });
+    } catch (err) {
+      // Check for specific error types stringified in the job or thrown locally
+      const errorMessage = err.message || '';
+
+      if (errorMessage.includes('ffmpeg') || errorMessage.includes('process-video')) {
+        console.error('[ERROR] Video Transcoding failed:', err);
+        return res.status(422).json({
+          error: 'Video processing failed',
+          details: 'The video file could not be processed. It may be corrupt or in an unsupported format.',
+          technicalDetails: errorMessage
+        });
+      } else if (errorMessage.includes('STORAGE_ERROR')) {
+        console.error('[ERROR] Video Upload failed:', err);
+        return res.status(503).json({
+          error: 'Storage service unavailable',
+          details: 'Video processed but failed to upload to storage.',
+          technicalDetails: errorMessage
+        });
+      }
+
+      throw err; // Re-throw to be caught by outer catch for generic 500
+    }
 
   } catch (error) {
     console.error('[ERROR] Processing failed:', error);
     res.status(500).json({
-      error: 'Error during video processing',
+      error: 'Internal Server Error',
       details: error.message
     });
   }

@@ -1,8 +1,8 @@
 import React from 'react';
 
 const TopicNameInput = ({ value, onChange }) => (
-  <div>
-    <label htmlFor="topicName" className="p-2 block text-xl font-medium text-gray-700">
+  <div className="mb-6">
+    <label htmlFor="topicName" className="block text-sm font-semibold text-gray-700 mb-2 font-body">
       Topic Name
     </label>
     <input
@@ -10,7 +10,7 @@ const TopicNameInput = ({ value, onChange }) => (
       id="topicName"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="mt-1 p-2 block w-full rounded-md border-black shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sarthi-purple-500 focus:border-transparent transition-all placeholder:text-gray-400 font-body"
       placeholder="Add Your Topic Name"
       required
     />
