@@ -5,6 +5,7 @@ const Course = require('../models/coursemodel.js');
 const Lecture = require('../models/lecturemodel.js');
 const Enrollment = require('../models/enrollmentmodel.js');
 const { authenticateToken, authorizeRole } = require('../middleware/authMiddleware');
+const { checkCourseAccess, checkTeacherAccess } = require('../middleware/enrollmentMiddleware');
 const fs = require('fs/promises');
 
 /**
@@ -130,7 +131,7 @@ router.get('/', authenticateToken, authorizeRole(['student', 'teacher']), async 
  *       500:
  *         description: Server error
  */
-router.get('/:id', async (req, res) => {
+router.get('/:id', authenticateToken, authorizeRole(['student', 'teacher']), checkCourseAccess, async (req, res) => {
   try {
     console.log(`[DB] Fetching course ID: ${req.params.id}`);
     const course = await Course.findById(req.params.id).populate('teacherId', 'username');
@@ -261,7 +262,7 @@ router.post('/', authenticateToken, authorizeRole(['student', 'teacher']), async
  *       500:
  *         description: Server error
  */
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', authenticateToken, authorizeRole(['teacher']), checkTeacherAccess, async (req, res) => {
   try {
     console.log(`[DB] Updating course ${req.params.id}`);
     console.log(`[DB] Update payload:`, req.body);
@@ -323,7 +324,7 @@ router.patch('/:id', async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.delete('/:id', authenticateToken, authorizeRole(['student', 'teacher']), async (req, res) => {
+router.delete('/:id', authenticateToken, authorizeRole(['teacher']), checkTeacherAccess, async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   console.log(`[TX] Starting deletion transaction for course ${req.params.id}`);

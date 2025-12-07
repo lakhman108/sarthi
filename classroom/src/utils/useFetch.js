@@ -1,29 +1,38 @@
 import { useState, useEffect, useCallback } from "react";
 import Cookies from 'js-cookie';
-const useFetch = (url, options) => {
+
+const useFetch = (url, options = {}) => {
   const [data, setData] = useState(null);
- const savedtoken=Cookies.get('token');
+  
   const fetchData = useCallback(async () => {
     try {
-      const response = await fetch(url, options,{
+      const savedtoken = Cookies.get('token');
+      const response = await fetch(url, {
+        ...options,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${savedtoken}`,
+          ...options.headers,
         },
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
       setData(data);
     } catch (error) {
       console.error('Error fetching data:', error);
-      setData(null); // Set data to null on error
+      setData(null);
     }
-  }, [url, JSON.stringify(options)]); // Stringify options to avoid unnecessary re-fetching
+  }, [url, JSON.stringify(options)]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  return data; // Return the data directly
+  return data;
 };
 
 export default useFetch;

@@ -3,6 +3,7 @@ const router = express.Router();
 const Lecture = require("../models/lecturemodel.js");
 const fs = require("fs");
 const { authenticateToken, authorizeRole } = require('../middleware/authMiddleware');
+const { checkLectureAccess, checkCourseAccess, checkLectureTeacherAccess } = require('../middleware/enrollmentMiddleware');
 
 /**
  * @swagger
@@ -128,7 +129,7 @@ router.get("/", async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.get("/:id", async (req, res) => {
+router.get("/:id", authenticateToken, authorizeRole(['student', 'teacher']), checkLectureAccess, async (req, res) => {
     try {
         console.log(`[DB] Fetching lecture: ${req.params.id}`);
         const lecture = await Lecture.findById(req.params.id).populate("comments.userId", "username");
@@ -173,7 +174,7 @@ router.get("/:id", async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", authenticateToken, authorizeRole(['teacher']), checkLectureTeacherAccess, async (req, res) => {
     try {
         console.log(`[DB] Attempting to delete lecture: ${req.params.id}`);
         const lecture = await Lecture.findByIdAndDelete(req.params.id);
@@ -230,7 +231,7 @@ router.delete("/:id", async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.get("/course/:courseId", async (req, res) => {
+router.get("/course/:courseId", authenticateToken, authorizeRole(['student', 'teacher']), checkCourseAccess, async (req, res) => {
     try {
         console.log(`[DB] Fetching lectures for course: ${req.params.courseId}`);
         const lectures = await Lecture.find({courseId: req.params.courseId})
@@ -323,7 +324,7 @@ router.post("/", async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.patch("/:id/like", async (req, res) => {
+router.patch("/:id/like", authenticateToken, authorizeRole(['student', 'teacher']), checkLectureAccess, async (req, res) => {
     try {
         console.log(`[LIKE] Processing like for lecture: ${req.params.id}`);
         const lecture = await Lecture.findById(req.params.id);
@@ -371,7 +372,7 @@ router.patch("/:id/like", async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.patch("/:id/view", async (req, res) => {
+router.patch("/:id/view", authenticateToken, authorizeRole(['student', 'teacher']), checkLectureAccess, async (req, res) => {
     try {
         console.log(`[VIEW] Processing view for lecture: ${req.params.id}`);
         const lecture = await Lecture.findById(req.params.id);
@@ -421,7 +422,7 @@ router.patch("/:id/view", async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.get("/:id/comments", async (req, res) => {
+router.get("/:id/comments", authenticateToken, authorizeRole(['student', 'teacher']), checkLectureAccess, async (req, res) => {
     try {
         console.log(`[COMMENT] Fetching comments for lecture: ${req.params.id}`);
         const lecture = await Lecture.findById(req.params.id)
@@ -486,7 +487,7 @@ router.get("/:id/comments", async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.post('/:lectureid/comments', authenticateToken, authorizeRole(['student', 'teacher']), async (req, res) => {
+router.post('/:lectureid/comments', authenticateToken, authorizeRole(['student', 'teacher']), checkLectureAccess, async (req, res) => {
     try {
         console.log(`[AUTH] User ${req.user.userId} adding comment to lecture: ${req.params.lectureid}`);
         const lecture = await Lecture.findById(req.params.lectureid)
@@ -559,7 +560,7 @@ router.post('/:lectureid/comments', authenticateToken, authorizeRole(['student',
  *       500:
  *         description: Server error
  */
-router.patch("/:id/update", async (req, res) => {
+router.patch("/:id/update", authenticateToken, authorizeRole(['teacher']), checkLectureTeacherAccess, async (req, res) => {
     try {
         console.log(`[LECTURE] Updating lecture: ${req.params.id}`);
         console.log(`[DB] Update payload:`, req.body);

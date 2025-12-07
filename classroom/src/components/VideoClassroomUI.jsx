@@ -9,6 +9,7 @@ import { UserContext } from '../context/Usercontex';
 import Loader from './layout/Loader';
 import AddTopicModal from './TopicModal/AddTopicModal';
 import axios from 'axios';
+import Cookies from 'js-cookie';
 
 import { ToastContainer } from 'react-toastify';
 
@@ -49,7 +50,18 @@ const VideoClassroomUI = ({ courseName, classCode }) => {
     const fetchLectures = async () => {
         setLoading(true);
         try {
-            const response = await fetch(`${process.env.REACT_APP_API_URL}/api/lectures/course/${id}`);
+            const token = Cookies.get('token');
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/api/lectures/course/${id}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const data = await response.json();
             setLectures(data);
         } catch (error) {
@@ -61,7 +73,18 @@ const VideoClassroomUI = ({ courseName, classCode }) => {
 
     const refreshLecture = async (lectureId) => {
         try {
-            const response = await fetch(`${process.env.REACT_APP_API_URL}/api/lectures/${lectureId}`);
+            const token = Cookies.get('token');
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/api/lectures/${lectureId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const updatedLecture = await response.json();
             setLectures(prevLectures => prevLectures.map(lecture =>
                 lecture._id === lectureId ? updatedLecture : lecture
@@ -75,15 +98,24 @@ const VideoClassroomUI = ({ courseName, classCode }) => {
             return;
         }
         try {
-            //console.log(currentLecture);
-            await axios.patch(`${process.env.REACT_APP_API_URL}/api/lectures/${currentLecture._id}/like`);
+            const token = Cookies.get('token');
+            await axios.patch(
+                `${process.env.REACT_APP_API_URL}/api/lectures/${currentLecture._id}/like`,
+                {},
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
             setLectures(
                 prevLectures => prevLectures.map(lecture =>
                     lecture._id == currentLecture._id ? { ...lecture, noOfLikes: lecture.noOfLikes + 1 } : lecture
                 )
             )
         } catch (error) {
-            //console.log(error);
+            console.error("Error liking lecture:", error);
         }
     }
 
