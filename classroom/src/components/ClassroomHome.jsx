@@ -7,6 +7,7 @@ import useAxiosFetch from '../utils/fetchClasses';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { UserContext } from '../context/Usercontex';
+import { BookOpen } from 'lucide-react';
 import config from '../config/config';
 const ClassroomUI = () => {
     const { user } = useContext(UserContext);
@@ -61,30 +62,59 @@ const ClassroomUI = () => {
     };
 
     return (
-        <div className="flex bg-white">
+        <div className="flex bg-gradient-to-br from-gray-50 via-white to-sarthi-purple-50 min-h-screen">
             <Sidebar />
             <div className="flex-1">
                 <Header refresh={refetch} />
-                <main className="p-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {loading ? <Loader /> : courses.map((course, index) => (
-
-                            <ClassCard
-                                role={user.role}
-                                key={course._id}
-                                inviteCode={course.inviteCode}
-                                classCode={course.classCode}
-                                _id={course._id}
-                                title={course.courseName}
-                                teacher={course.teacherId.username}
-                                color={colors[index % colors.length]}
-                                onDelete={handleDelete}
-                                onEdit={handleEdit}
-                            />
-
-
-                        ))}
-                    </div>
+                <main className="p-8">
+                    {loading ? (
+                        <Loader />
+                    ) : (
+                        <>
+                            {courses.length > 0 ? (
+                                <>
+                                    <div className="mb-8">
+                                        <h2 className="text-3xl font-display font-bold text-gray-900 mb-2">
+                                            Your Classrooms
+                                        </h2>
+                                        <p className="text-gray-600 font-body">
+                                            {courses.length} {courses.length === 1 ? 'course' : 'courses'} available
+                                        </p>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                        {courses.map((course, index) => (
+                                            <ClassCard
+                                                role={user.role}
+                                                key={course._id}
+                                                inviteCode={course.inviteCode}
+                                                classCode={course.classCode}
+                                                _id={course._id}
+                                                title={course.courseName}
+                                                teacher={course.teacherId.username}
+                                                color={colors[index % colors.length]}
+                                                onDelete={handleDelete}
+                                                onEdit={handleEdit}
+                                            />
+                                        ))}
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center py-20">
+                                    <div className="w-24 h-24 bg-sarthi-purple-100 rounded-full flex items-center justify-center mb-6">
+                                        <BookOpen size={48} className="text-sarthi-purple-600" />
+                                    </div>
+                                    <h3 className="text-2xl font-display font-bold text-gray-900 mb-2">
+                                        No classrooms yet
+                                    </h3>
+                                    <p className="text-gray-600 font-body text-center max-w-md">
+                                        {user.role === 'teacher' 
+                                            ? 'Create your first classroom to start teaching'
+                                            : 'Join a classroom using an invite code to get started'}
+                                    </p>
+                                </div>
+                            )}
+                        </>
+                    )}
                 </main>
             </div>
         </div>

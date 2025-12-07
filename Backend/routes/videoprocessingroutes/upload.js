@@ -12,10 +12,49 @@ const videoProcessingQueue = new Queue('video processing', process.env.REDIS_URL
 const app = express.Router();
 
 
-// If using Bull with Redis, uncomment this:
+// Bull Queue Worker with Lecture Status Updates
 videoProcessingQueue.process('process-video', 2, async (job) => {
-  const { filePath, videoName, outputDir, resolutions } = job.data;
-  return await processVideo(filePath, videoName, outputDir, resolutions);
+  const Lecture = require('../../models/lecturemodel.js');
+  const { filePath, videoName, outputDir, resolutions, lectureId } = job.data;
+  
+  try {
+    // Update lecture status to "processing"
+    console.log(`[WORKER] Starting processing for lecture ${lectureId}`);
+    await Lecture.findByIdAndUpdate(lectureId, {
+      processingStatus: 'processing'
+    });
+
+    // Process the video
+    const result = await processVideo(filePath, videoName, outputDir, resolutions);
+
+    // Upload to MinIO
+    const s3FolderPath = `hls-videos/${videoName}`;
+    const minioResult = await uploadToMinIO(outputDir, s3FolderPath);
+    
+    console.log('[COMPLETE] Job finished', minioResult);
+    console.log('[CLEANUP] Removing local HLS files...');
+    cleanupLocalFiles(outputDir);
+
+    // Update lecture with status "completed" and videoLink
+    await Lecture.findByIdAndUpdate(lectureId, {
+      processingStatus: 'completed',
+      videoLink: minioResult.masterPlaylistUrl
+    });
+    
+    console.log(`[WORKER] Lecture ${lectureId} processing completed successfully`);
+    return minioResult;
+
+  } catch (error) {
+    console.error(`[WORKER] Processing failed for lecture ${lectureId}:`, error);
+    
+    // Update lecture with status "failed" and error message
+    await Lecture.findByIdAndUpdate(lectureId, {
+      processingStatus: 'failed',
+      processingError: error.message
+    });
+    
+    throw error;
+  }
 });
 
 const processVideo = async (filePath, videoName, outputDir, resolutions) => {
@@ -208,10 +247,19 @@ ${res}/stream_${res}.m3u8`;
 // The endpoint returns the URL of the master playlist
 
 app.post('/', upload.single('uploadedFile'), async (req, res) => {
+  const Lecture = require('../../models/lecturemodel.js');
+  
   try {
     if (!req.file) {
       console.error('[ERROR] No file uploaded');
       return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const { courseId, nameOfTopic } = req.body;
+    
+    if (!courseId || !nameOfTopic) {
+      console.error('[ERROR] Missing required fields');
+      return res.status(400).json({ error: 'courseId and nameOfTopic are required' });
     }
 
     const jobId = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
@@ -219,69 +267,42 @@ app.post('/', upload.single('uploadedFile'), async (req, res) => {
 
     const filePath = req.file.path;
     console.log('[UPLOAD] File received:', filePath);
-
     console.log('[PROCESS] Sanitized video name:', videoName);
+
+    // Create lecture record BEFORE enqueueing job
+    const lecture = new Lecture({
+      courseId,
+      nameOfTopic,
+      processingStatus: 'pending',
+      jobId: jobId
+    });
+    await lecture.save();
+    console.log(`[DB] Lecture created: ${lecture._id}`);
 
     const outputDir = `./public/hls/${videoName}`;
     const resolutions = ['240p', '360p', '720p'];
 
-    // Add job to queue
+    // Add job to queue with lectureId
     const job = await videoProcessingQueue.add('process-video', {
       filePath: filePath,
       videoName,
       outputDir: outputDir,
-      resolutions: resolutions
+      resolutions: resolutions,
+      lectureId: lecture._id.toString()
     });
 
-    console.log(`[QUEUE] Job ${job.id} added to queue`);
+    console.log(`[QUEUE] Job ${job.id} added to queue for lecture ${lecture._id}`);
 
-    // Wait for job to complete
-    try {
-      const result = await job.finished();
-
-      const s3FolderPath = `hls-videos/${videoName}`;
-      let minioResult;
-      try {
-        minioResult = await uploadToMinIO(outputDir, s3FolderPath);
-      } catch (uploadError) {
-        console.error('[ERROR] Storage/Upload failed:', uploadError);
-        throw new Error('STORAGE_ERROR: ' + uploadError.message);
-      }
-
-      console.log('[COMPLETE] Job finished', minioResult);
-      console.log('[CLEANUP] Removing local HLS files...');
-      cleanupLocalFiles(outputDir);
-
-      res.status(200).json({
-        message: 'Video processing completed successfully',
-        masterPlaylist: minioResult.masterPlaylistUrl,
-        processedFileName: videoName
-      });
-    } catch (err) {
-      // Check for specific error types stringified in the job or thrown locally
-      const errorMessage = err.message || '';
-
-      if (errorMessage.includes('ffmpeg') || errorMessage.includes('process-video')) {
-        console.error('[ERROR] Video Transcoding failed:', err);
-        return res.status(422).json({
-          error: 'Video processing failed',
-          details: 'The video file could not be processed. It may be corrupt or in an unsupported format.',
-          technicalDetails: errorMessage
-        });
-      } else if (errorMessage.includes('STORAGE_ERROR')) {
-        console.error('[ERROR] Video Upload failed:', err);
-        return res.status(503).json({
-          error: 'Storage service unavailable',
-          details: 'Video processed but failed to upload to storage.',
-          technicalDetails: errorMessage
-        });
-      }
-
-      throw err; // Re-throw to be caught by outer catch for generic 500
-    }
+    // Return immediately with lectureId, jobId, and processingStatus
+    res.status(202).json({
+      message: 'Video upload accepted and processing started',
+      lectureId: lecture._id,
+      jobId: jobId,
+      processingStatus: 'pending'
+    });
 
   } catch (error) {
-    console.error('[ERROR] Processing failed:', error);
+    console.error('[ERROR] Upload failed:', error);
     res.status(500).json({
       error: 'Internal Server Error',
       details: error.message

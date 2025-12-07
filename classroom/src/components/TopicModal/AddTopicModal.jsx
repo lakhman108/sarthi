@@ -36,6 +36,8 @@ const AddTopicModal = ({ isOpen, onClose, courseId, onTopicAdded }) => {
 
             const formData = new FormData();
             formData.append('uploadedFile', file);
+            formData.append('courseId', courseId);
+            formData.append('nameOfTopic', topicName);
 
             const responseUpload = await axios.post(uploadVideoUrl, formData, {
                 onUploadProgress: (progressEvent) => {
@@ -44,20 +46,14 @@ const AddTopicModal = ({ isOpen, onClose, courseId, onTopicAdded }) => {
                 },
             });
 
-            const { masterPlaylist } = responseUpload.data;
+            // Response now contains lectureId, jobId, and processingStatus
+            console.log('Upload response:', responseUpload.data);
 
-            const lectureData = {
-                courseId: courseId,
-                nameOfTopic: topicName,
-                videoLink: masterPlaylist,
-            };
-
-            await axios.post(createLectureUrl, lectureData);
-
+            // Close modal immediately after upload response
             onTopicAdded();
             onClose();
         } catch (err) {
-            setError(err.response?.data?.message || err.message);
+            setError(err.response?.data?.error || err.response?.data?.message || err.message);
         } finally {
             setIsUploading(false);
         }

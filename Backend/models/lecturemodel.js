@@ -4,7 +4,14 @@ const { Schema } = mongoose;
 const lectureSchema = new Schema({
   courseId: { type: Schema.Types.ObjectId, ref: 'Course', required: true },
   nameOfTopic: { type: String, required: true },
-  videoLink: { type: String, required: true },
+  videoLink: { type: String },
+  processingStatus: { 
+    type: String, 
+    enum: ['pending', 'processing', 'completed', 'failed'], 
+    default: 'pending' 
+  },
+  jobId: { type: String },
+  processingError: { type: String },
   noOfViews: { type: Number, default: 0 },
   noOfLikes: { type: Number, default: 0 },
   comments: [{

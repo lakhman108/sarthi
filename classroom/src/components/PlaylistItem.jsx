@@ -103,14 +103,44 @@ const PlaylistItem = ({ lecture, isActive, onClick, onLectureDeleted, onLectureE
         dispatch({ type: CLOSE_EDIT_CONFIRMATION });
     };
 
+    const getStatusBadge = () => {
+        const status = lecture.processingStatus;
+        if (!status || status === 'completed') return null;
+
+        const statusConfig = {
+            pending: { text: 'Uploading...', color: 'bg-yellow-100 text-yellow-800' },
+            processing: { text: 'Processing...', color: 'bg-blue-100 text-blue-800' },
+            failed: { text: 'Failed', color: 'bg-red-100 text-red-800' }
+        };
+
+        const config = statusConfig[status];
+        if (!config) return null;
+
+        return (
+            <span className={`text-xs px-2 py-1 rounded-full ${config.color}`}>
+                {config.text}
+            </span>
+        );
+    };
+
+    const isDisabled = lecture.processingStatus && lecture.processingStatus !== 'completed';
+
     return (
         <div
-            className={`flex items-center justify-between space-x-2 p-2 cursor-pointer ${isActive ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'}`}
-            onClick={onClick}
+            className={`flex items-center justify-between space-x-2 p-2 ${
+                isDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+            } ${isActive ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'}`}
+            onClick={isDisabled ? undefined : onClick}
         >
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 flex-1 min-w-0">
                 <Play size={16} className={isActive ? 'text-blue-600' : 'text-gray-600'} />
-                <span className={isActive ? 'font-bold' : ''}>{lecture.nameOfTopic}</span>
+                <div className="flex flex-col flex-1 min-w-0">
+                    <span className={`${isActive ? 'font-bold' : ''} truncate`}>{lecture.nameOfTopic}</span>
+                    {getStatusBadge()}
+                    {lecture.processingStatus === 'failed' && lecture.processingError && (
+                        <span className="text-xs text-red-600 truncate">{lecture.processingError}</span>
+                    )}
+                </div>
             </div>
 
             {user.role === "teacher" && (

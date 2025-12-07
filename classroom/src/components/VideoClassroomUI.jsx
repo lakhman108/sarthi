@@ -123,6 +123,26 @@ const VideoClassroomUI = ({ courseName, classCode }) => {
         fetchLectures();
     }, [id]);
 
+    // Auto-refresh for processing lectures - only poll specific lectures
+    useEffect(() => {
+        const processingLectures = lectures.filter(
+            lecture => lecture.processingStatus === 'pending' || lecture.processingStatus === 'processing'
+        );
+
+        if (processingLectures.length === 0) return;
+
+        const interval = setInterval(async () => {
+            console.log(`Polling ${processingLectures.length} processing lecture(s)...`);
+            
+            // Only refresh the specific lectures that are processing
+            for (const lecture of processingLectures) {
+                await refreshLecture(lecture._id);
+            }
+        }, 5000); // Poll every 5 seconds
+
+        return () => clearInterval(interval);
+    }, [lectures, id]);
+
     const handleLectureDeleted = (deletedLectureId) => {
         setLectures(prevLectures => prevLectures.filter(lecture => lecture._id !== deletedLectureId));
         if (currentLectureIndex >= lectures.length - 1) {
@@ -182,8 +202,10 @@ const VideoClassroomUI = ({ courseName, classCode }) => {
                                 <div className="w-full lg:w-3/4">
                                     {currentLecture && (
                                         <div className="space-y-4 sm:space-y-6">
-                                            <VideoPlayer videoLink={currentLecture.videoLink}
-                                            lectureId={currentLecture._id}
+                                            <VideoPlayer 
+                                                videoLink={currentLecture.videoLink}
+                                                lectureId={currentLecture._id}
+                                                processingStatus={currentLecture.processingStatus}
                                             />
                                             <LectureInfo lecture={currentLecture} onLike={handleLike} />
                                             <CommentSection lectureId={currentLecture._id} />

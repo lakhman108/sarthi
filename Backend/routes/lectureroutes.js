@@ -138,7 +138,7 @@ router.get("/:id", authenticateToken, authorizeRole(['student', 'teacher']), che
             console.log(`[DB] Lecture not found: ${req.params.id}`);
             return res.status(404).json({ error: "Lecture not found" });
         }
-        console.log(`[DB] Found lecture: ${lecture.nameOfTopic}`);
+        console.log(`[DB] Found lecture: ${lecture.nameOfTopic} (status: ${lecture.processingStatus})`);
         res.json(lecture);
     } catch (error) {
         console.error(`[ERROR] Fetch lecture failed:`, error);
@@ -236,7 +236,7 @@ router.get("/course/:courseId", authenticateToken, authorizeRole(['student', 'te
         console.log(`[DB] Fetching lectures for course: ${req.params.courseId}`);
         const lectures = await Lecture.find({courseId: req.params.courseId})
             .populate("comments.userId", "username");
-        console.log(`[DB] Found ${lectures.length} lectures`);
+        console.log(`[DB] Found ${lectures.length} lectures (including processing status)`);
         res.json(lectures);
     } catch (error) {
         console.error(`[ERROR] Fetch course lectures failed:`, error);

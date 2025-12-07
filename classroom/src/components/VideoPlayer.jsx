@@ -62,7 +62,7 @@ const reducer = (state, action) => {
   }
 };
 
-const VideoPlayer = ({ videoLink,lectureId }) => {
+const VideoPlayer = ({ videoLink, lectureId, processingStatus }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
@@ -330,6 +330,36 @@ useEffect(() => {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [state.showControls]);
 
+
+  // Show processing message if video is not ready
+  if (!videoLink || (processingStatus && processingStatus !== 'completed')) {
+    const statusMessages = {
+      pending: { text: 'Video is being uploaded...', icon: '⏳' },
+      processing: { text: 'Video is being processed...', icon: '⚙️' },
+      failed: { text: 'Video processing failed', icon: '❌' }
+    };
+
+    const message = statusMessages[processingStatus] || statusMessages.pending;
+
+    return (
+      <div className="bg-black flex justify-center items-center">
+        <div className="video-container relative w-full max-w-4xl aspect-video">
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-black flex flex-col items-center justify-center text-white p-4">
+            <div className="text-6xl mb-4">{message.icon}</div>
+            <span className="text-xl font-semibold mb-2">{message.text}</span>
+            {processingStatus === 'processing' && (
+              <div className="mt-4">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+              </div>
+            )}
+            {processingStatus === 'failed' && (
+              <span className="text-sm text-red-400 mt-2">Please contact support or try uploading again</span>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-black flex justify-center items-center">
