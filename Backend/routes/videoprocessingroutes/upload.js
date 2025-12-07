@@ -13,7 +13,8 @@ const app = express.Router();
 
 
 // Bull Queue Worker with Lecture Status Updates
-videoProcessingQueue.process('process-video', 2, async (job) => {
+// Changed from 2 to 1 concurrent worker to prevent resource contention and alternating failures
+videoProcessingQueue.process('process-video', 1, async (job) => {
   const Lecture = require('../../models/lecturemodel.js');
   const { filePath, videoName, outputDir, resolutions, lectureId } = job.data;
   
@@ -59,6 +60,18 @@ videoProcessingQueue.process('process-video', 2, async (job) => {
 
 const processVideo = async (filePath, videoName, outputDir, resolutions) => {
   try {
+    // Verify file exists before processing
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`Video file not found: ${filePath}`);
+    }
+
+    // Check file size
+    const stats = fs.statSync(filePath);
+    if (stats.size === 0) {
+      throw new Error(`Video file is empty: ${filePath}`);
+    }
+    console.log(`[VALIDATION] File size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
+
     // Create output directories
     createDirectories(outputDir, resolutions);
     console.log('[SETUP] Created output directories in:', outputDir);
@@ -128,7 +141,13 @@ const processVideo = async (filePath, videoName, outputDir, resolutions) => {
             console.log(`[SUCCESS] ${res} conversion complete - Created ${segmentCount} segments`);
             resolve();
           } else {
-            const error = new Error(`FFmpeg process exited with code ${code}`);
+            let errorMsg = `FFmpeg process exited with code ${code}`;
+            if (code === 254) {
+              errorMsg += ' - Possible causes: corrupted video file, unsupported codec, or file access issue';
+            } else if (code === 1) {
+              errorMsg += ' - FFmpeg encoding error, check video format compatibility';
+            }
+            const error = new Error(errorMsg);
             console.error(`[ERROR] ${res}:`, error.message);
             reject(error);
           }
@@ -265,7 +284,8 @@ app.post('/', upload.single('uploadedFile'), async (req, res) => {
     const jobId = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
     const videoName = `${sanitizeFileName(path.parse(req.file.originalname).name)}_${jobId}`;
 
-    const filePath = req.file.path;
+    // Use absolute path to ensure worker can find the file
+    const filePath = path.resolve(req.file.path);
     console.log('[UPLOAD] File received:', filePath);
     console.log('[PROCESS] Sanitized video name:', videoName);
 
@@ -279,7 +299,8 @@ app.post('/', upload.single('uploadedFile'), async (req, res) => {
     await lecture.save();
     console.log(`[DB] Lecture created: ${lecture._id}`);
 
-    const outputDir = `./public/hls/${videoName}`;
+    // Use absolute path for output directory
+    const outputDir = path.resolve(`./public/hls/${videoName}`);
     const resolutions = ['240p', '360p', '720p'];
 
     // Add job to queue with lectureId

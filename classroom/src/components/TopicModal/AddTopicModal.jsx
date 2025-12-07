@@ -18,8 +18,12 @@ const AddTopicModal = ({ isOpen, onClose, courseId, onTopicAdded }) => {
     const uploadVideoUrl = `${process.env.REACT_APP_API_URL}/api/upload`;
     const createLectureUrl = `${process.env.REACT_APP_API_URL}/api/lectures`;
 
+    const [fileName, setFileName] = useState('');
+
     const handleFileChange = (e) => {
-        setFile(e.target.files[0]);
+        const selectedFile = e.target.files[0];
+        setFile(selectedFile);
+        setFileName(selectedFile ? selectedFile.name : '');
     };
 
     const handleSubmit = async (e) => {
@@ -65,7 +69,7 @@ const AddTopicModal = ({ isOpen, onClose, courseId, onTopicAdded }) => {
         <ModalWrapper onClose={onClose} title="Add New Topic">
             <form onSubmit={handleSubmit} className="space-y-4">
                 <TopicNameInput value={topicName} onChange={setTopicName} />
-                <FileInput onChange={handleFileChange} />
+                <FileInput onChange={handleFileChange} fileName={fileName} />
                 <ErrorMessage message={error} />
                 <UploadProgress isUploading={isUploading} progress={uploadProgress} />
                 <ModalActions onClose={onClose} isUploading={isUploading} />
