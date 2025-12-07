@@ -1501,3 +1501,364 @@ AWS_S3_BUCKET_NAME=your-bucket
 **Created:** December 7, 2024  
 **Last Updated:** December 7, 2024  
 **Version:** 1.0
+
+
+---
+
+## FAQ - Frequently Asked Questions
+
+### Q: When FFmpeg is processing a video, do other users have to wait?
+
+**Answer: NO! Other users can use the app normally.**
+
+#### Why Not?
+
+Your Node.js server uses **asynchronous processing** and **separate processes**:
+
+```mermaid
+graph TB
+    subgraph "Main Node.js Process (Event Loop)"
+        A[User 1: Login Request] --> B[Auth Handler]
+        C[User 2: Get Courses] --> D[Course Handler]
+        E[User 3: Post Comment] --> F[Comment Handler]
+    end
+    
+    subgraph "Separate FFmpeg Process"
+        G[Video Processing]
+    end
+    
+    B --> H[Response to User 1]
+    D --> I[Response to User 2]
+    F --> J[Response to User 3]
+    
+    style G fill:#f9f,stroke:#333
+    style A fill:#bfb,stroke:#333
+    style C fill:#bfb,stroke:#333
+    style E fill:#bfb,stroke:#333
+```
+
+#### How It Works
+
+1. **FFmpeg Runs in Separate Process**
+   ```javascript
+   // This creates a SEPARATE process (not blocking Node.js)
+   const process = exec('ffmpeg -i video.mp4 ...');
+   ```
+
+2. **Node.js Event Loop Stays Free**
+   ```javascript
+   // While FFmpeg is running in background...
+   app.post('/api/login', (req, res) => {
+     // This still works instantly!
+     // Node.js event loop is not blocked
+   });
+   
+   app.get('/api/courses', (req, res) => {
+     // This also works instantly!
+   });
+   ```
+
+3. **Bull Worker Runs Asynchronously**
+   ```javascript
+   // Worker processes jobs in background
+   videoProcessingQueue.process('process-video', 1, async (job) => {
+     // This runs asynchronously
+     // Doesn't block the main server
+     await processVideo(job.data);
+   });
+   ```
+
+#### Visual Example
+
+```mermaid
+sequenceDiagram
+    participant U1 as User 1
+    participant U2 as User 2
+    participant API as Express API
+    participant W as Worker
+    participant FF as FFmpeg Process
+
+    Note over W,FF: Video processing happening...
+    W->>FF: Processing video (5 minutes)
+    
+    Note over U1,API: Meanwhile, other requests work normally
+    
+    U1->>API: POST /api/login
+    API-->>U1: ✓ Login successful (instant)
+    
+    U2->>API: GET /api/courses
+    API-->>U2: ✓ Courses data (instant)
+    
+    U1->>API: POST /api/comment
+    API-->>U1: ✓ Comment posted (instant)
+    
+    Note over FF: Still processing...
+    
+    U2->>API: GET /api/lectures
+    API-->>U2: ✓ Lectures data (instant)
+    
+    FF-->>W: ✓ Processing complete
+```
+
+#### What WOULD Block Other Users?
+
+**❌ Bad (Synchronous - Blocks Everything):**
+```javascript
+app.post('/api/upload', (req, res) => {
+  // This would block the entire server!
+  const result = processVideoSync(file); // Takes 5 minutes
+  res.json(result);
+});
+
+// While processing, ALL other requests wait:
+app.post('/api/login', (req, res) => {
+  // User has to wait 5 minutes! ❌
+});
+```
+
+**✅ Good (Asynchronous - Doesn't Block):**
+```javascript
+app.post('/api/upload', async (req, res) => {
+  // Add to queue and return immediately
+  await videoProcessingQueue.add('process-video', jobData);
+  res.json({ status: 'processing' }); // Instant response!
+});
+
+// Other requests work normally:
+app.post('/api/login', (req, res) => {
+  // Works instantly! ✅
+});
+```
+
+#### Performance Impact
+
+**CPU Usage:**
+- FFmpeg uses CPU heavily (50-80%)
+- But Node.js event loop still has CPU time
+- Other requests might be slightly slower (milliseconds)
+- Not noticeable to users
+
+**Memory Usage:**
+- FFmpeg uses memory for video processing
+- Node.js uses separate memory
+- As long as server has enough RAM, no impact
+
+**Real-World Example:**
+
+```
+Server: 4 CPU cores, 8GB RAM
+
+While processing video:
+- FFmpeg: Uses 2 cores, 2GB RAM
+- Node.js: Uses 1 core, 500MB RAM
+- Available: 1 core, 5.5GB RAM
+
+Result: Other requests work fine!
+```
+
+#### When Would Users Notice Slowdown?
+
+1. **Server Overloaded**
+   - Processing 10 videos simultaneously
+   - Server runs out of CPU/RAM
+   - Solution: Scale to multiple servers
+
+2. **Database Slow**
+   - MongoDB query takes long
+   - Not related to video processing
+   - Solution: Optimize database queries
+
+3. **Network Slow**
+   - Slow internet connection
+   - Not related to video processing
+   - Solution: Use CDN, optimize assets
+
+#### Testing This
+
+You can test this yourself:
+
+1. **Start video upload** (takes 2-5 minutes)
+2. **While processing, try:**
+   - Login/logout
+   - Browse courses
+   - Post comments
+   - View lectures
+   
+All should work instantly!
+
+#### Summary
+
+✅ **Video processing does NOT block other requests**  
+✅ **FFmpeg runs in separate process**  
+✅ **Node.js event loop stays free**  
+✅ **Other users experience no delay**  
+✅ **Only CPU/RAM usage increases slightly**
+
+---
+
+### Q: What if 100 users upload videos at the same time?
+
+**Answer: They all get instant response, but videos process one by one.**
+
+#### What Happens
+
+```mermaid
+graph TB
+    U1[User 1 Upload] --> Q[Queue]
+    U2[User 2 Upload] --> Q
+    U3[User 3 Upload] --> Q
+    U4[User 100 Upload] --> Q
+    
+    Q --> W[Worker]
+    W --> P1[Process Video 1]
+    P1 --> P2[Process Video 2]
+    P2 --> P3[Process Video 3]
+    P3 --> P4[Process Video 100]
+    
+    U1 -.->|Instant Response| R1[202 Accepted]
+    U2 -.->|Instant Response| R2[202 Accepted]
+    U3 -.->|Instant Response| R3[202 Accepted]
+    U4 -.->|Instant Response| R4[202 Accepted]
+```
+
+**Timeline:**
+- User 1: Upload → Instant response → Processing starts immediately
+- User 2: Upload → Instant response → Waits in queue
+- User 3: Upload → Instant response → Waits in queue
+- ...
+- User 100: Upload → Instant response → Waits in queue
+
+**Processing Time:**
+- Each video: ~3 minutes
+- 100 videos: ~300 minutes (5 hours)
+- Last user waits 5 hours for their video
+
+#### Solutions for High Load
+
+**1. Add More Workers**
+```javascript
+// Run 5 workers on different servers
+// Each processes 1 video at a time
+// Total: 5 videos processing simultaneously
+
+// Server 1
+videoProcessingQueue.process('process-video', 1, processVideo);
+
+// Server 2
+videoProcessingQueue.process('process-video', 1, processVideo);
+
+// Server 3-5: Same
+```
+
+**Result:** 100 videos in ~60 minutes (5x faster)
+
+**2. Priority Queue**
+```javascript
+// Premium users get priority
+await videoProcessingQueue.add('process-video', jobData, {
+  priority: user.isPremium ? 1 : 10 // Lower number = higher priority
+});
+```
+
+**3. Notify Users**
+```javascript
+// Tell users their position in queue
+const waitingCount = await videoProcessingQueue.getWaitingCount();
+const estimatedTime = waitingCount * 3; // 3 minutes per video
+
+res.json({
+  status: 'queued',
+  position: waitingCount + 1,
+  estimatedWaitTime: `${estimatedTime} minutes`
+});
+```
+
+---
+
+### Q: Can I increase concurrent workers to process faster?
+
+**Answer: Yes, but carefully!**
+
+#### Current Setup (1 Worker)
+
+```javascript
+videoProcessingQueue.process('process-video', 1, async (job) => {
+  // Process 1 video at a time
+});
+```
+
+**Pros:**
+- ✅ Reliable (no resource conflicts)
+- ✅ Predictable performance
+- ✅ No failures
+
+**Cons:**
+- ❌ Slow for multiple uploads
+- ❌ Queue can backup
+
+#### Increasing to 2-3 Workers
+
+```javascript
+videoProcessingQueue.process('process-video', 3, async (job) => {
+  // Process 3 videos simultaneously
+});
+```
+
+**Pros:**
+- ✅ 3x faster processing
+- ✅ Better for high load
+
+**Cons:**
+- ⚠️ Uses 3x CPU/RAM
+- ⚠️ May cause failures if server weak
+- ⚠️ Need powerful server
+
+#### Server Requirements
+
+**For 1 Worker:**
+- CPU: 2 cores
+- RAM: 4GB
+- Works on basic server
+
+**For 3 Workers:**
+- CPU: 6-8 cores
+- RAM: 12-16GB
+- Needs powerful server
+
+#### Best Practice
+
+**Option 1: Single Server, 1 Worker**
+```javascript
+// Good for: Small apps, limited budget
+videoProcessingQueue.process('process-video', 1, processVideo);
+```
+
+**Option 2: Multiple Servers, 1 Worker Each**
+```javascript
+// Good for: Growing apps, better reliability
+// Server 1, 2, 3: Each runs 1 worker
+// Total: 3 videos processing simultaneously
+videoProcessingQueue.process('process-video', 1, processVideo);
+```
+
+**Option 3: Powerful Server, 3 Workers**
+```javascript
+// Good for: High load, powerful server
+videoProcessingQueue.process('process-video', 3, processVideo);
+```
+
+#### Testing Concurrent Workers
+
+```javascript
+// Start with 1, test with load
+videoProcessingQueue.process('process-video', 1, processVideo);
+
+// If server handles it well, try 2
+videoProcessingQueue.process('process-video', 2, processVideo);
+
+// Monitor CPU/RAM usage
+// If usage < 70%, can increase
+// If usage > 90%, decrease
+```
+
+---

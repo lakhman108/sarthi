@@ -21,6 +21,10 @@ videoProcessingQueue.process('process-video', 1, async (job) => {
   try {
     // Update lecture status to "processing"
     console.log(`[WORKER] Starting processing for lecture ${lectureId}`);
+    console.log(`[WORKER] File path: ${filePath}`);
+    console.log(`[WORKER] File exists: ${fs.existsSync(filePath)}`);
+    console.log(`[WORKER] Output dir: ${outputDir}`);
+    
     await Lecture.findByIdAndUpdate(lectureId, {
       processingStatus: 'processing'
     });
@@ -190,7 +194,7 @@ const sanitizeFileName = (fileName) => {
 
 // Set up multer for file uploads
 const storageEngine = multer.diskStorage({
-  destination: './public/uploads/',
+  destination: path.resolve('./public/uploads/'), // Use absolute path
   filename: function (req, file, callback) {
     const sanitizedName = sanitizeFileName(file.originalname);
     console.log('Original filename:', file.originalname);
@@ -286,7 +290,8 @@ app.post('/', upload.single('uploadedFile'), async (req, res) => {
 
     // Use absolute path to ensure worker can find the file
     const filePath = path.resolve(req.file.path);
-    console.log('[UPLOAD] File received:', filePath);
+    console.log('[UPLOAD] File received (absolute):', filePath);
+    console.log('[UPLOAD] File exists:', fs.existsSync(filePath));
     console.log('[PROCESS] Sanitized video name:', videoName);
 
     // Create lecture record BEFORE enqueueing job

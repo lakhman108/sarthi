@@ -29,6 +29,10 @@ const coreOptions = {
 
 
 console.log(coreOptions);
+
+// Trust proxy - required for rate limiting behind reverse proxy (Coolify/nginx)
+app.set('trust proxy', 1);
+
 app.use(cors(coreOptions));
 // Connect to MongoDB
 const uri = process.env.MONGODB_URI;
