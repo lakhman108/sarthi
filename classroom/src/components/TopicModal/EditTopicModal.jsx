@@ -20,8 +20,20 @@ const EditTopicModal = ({ isOpen, onClose, lecture, onLectureEdited }) => {
     const updateLectureUrl = `${process.env.REACT_APP_API_URL}/api/lecture`;
 
     const handleFileChange = (e) => {
-        setFile(e.target.files[0]);
-        setVideoAction('update');
+        const selectedFile = e.target.files[0];
+        if (selectedFile) {
+            if (selectedFile.size > 150 * 1024 * 1024) { // 150MB limit
+                setError('File size exceeds the 150MB limit.');
+                setFile(null);
+                e.target.value = null; // Reset input
+                return;
+            }
+            setError('');
+            setFile(selectedFile);
+            setVideoAction('update');
+        } else {
+            setFile(null);
+        }
     };
 
     const handleSubmit = async (e) => {

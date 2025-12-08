@@ -175,31 +175,81 @@ router.get("/:id", authenticateToken, authorizeRole(['student', 'teacher']), che
  *         description: Server error
  */
 router.delete("/:id", authenticateToken, authorizeRole(['teacher']), checkLectureTeacherAccess, async (req, res) => {
+    const Queue = require('bull');
+    const environment = process.env.ENVIRONMENT || 'production';
+    const queueName = `video-processing-${environment}`;
+    const videoProcessingQueue = new Queue(queueName, process.env.REDIS_URL);
+
     try {
         console.log(`[DB] Attempting to delete lecture: ${req.params.id}`);
-        const lecture = await Lecture.findByIdAndDelete(req.params.id);
+        const lecture = await Lecture.findById(req.params.id);
 
         if (!lecture) {
             console.log(`[DB] Lecture not found: ${req.params.id}`);
             return res.status(404).json({ error: "Lecture not found" });
         }
 
-        const str = lecture.videoLink;
-        const finalString = str
-            .replace(`${process.env.HOST}/api`, "public")
-            .replace("master.m3u8", "");
+        const { deleteFromMinIO, cleanupLocalFiles } = require('./videoprocessingroutes/cloud.js');
+        const path = require('path');
 
-        console.log(`[FS] Deleting lecture files: ${finalString}`);
-        fs.rm(finalString, { recursive: true, force: true }, (err) => {
-            if (err) {
-                console.error(`[ERROR] File deletion failed:`, err);
-                throw err;
+        // 1. Cancel pending/processing Bull queue job
+        if (lecture.processingStatus === 'pending' || lecture.processingStatus === 'processing') {
+            try {
+                const jobs = await videoProcessingQueue.getJobs(['waiting', 'active', 'delayed']);
+                for (const job of jobs) {
+                    if (job.data && job.data.lectureId === req.params.id) {
+                        await job.remove();
+                        console.log(`[QUEUE] Removed job ${job.id} for lecture ${req.params.id}`);
+                    }
+                }
+            } catch (e) {
+                console.error('[QUEUE] Failed to remove job:', e);
             }
-            console.log(`[FS] Successfully deleted: ${finalString}`);
-        });
+        }
 
+        // 2. Cleanup MinIO files using saved videoName
+        const folderName = lecture.videoName ? `hls-videos/${lecture.videoName}` : null;
+
+        if (folderName) {
+            console.log(`[DELETE] Cleaning up MinIO folder: ${folderName}`);
+            await deleteFromMinIO(folderName);
+        }
+
+        // 3. Cleanup local HLS files
+        if (lecture.videoName) {
+            const localHlsPath = path.join(__dirname, `../public/hls/${lecture.videoName}`);
+            cleanupLocalFiles(localHlsPath);
+            console.log(`[CLEANUP] Removed local HLS folder: ${localHlsPath}`);
+        }
+
+        // 4. Cleanup original upload file if still exists (for stuck uploads)
+        const uploadsDir = path.join(__dirname, '../public/uploads');
+        try {
+            if (fs.existsSync(uploadsDir)) {
+                const files = fs.readdirSync(uploadsDir);
+                // Match files that contain the jobId timestamp prefix
+                const jobTimestamp = lecture.jobId ? lecture.jobId.split('_')[0] : null;
+                if (jobTimestamp) {
+                    files.forEach(file => {
+                        // Check if file was created around the same time (within upload context)
+                        if (lecture.videoName && file.includes(lecture.videoName.split('_')[0])) {
+                            const filePath = path.join(uploadsDir, file);
+                            fs.unlinkSync(filePath);
+                            console.log(`[CLEANUP] Deleted orphan upload: ${file}`);
+                        }
+                    });
+                }
+            }
+        } catch (e) {
+            console.error('[CLEANUP] Error cleaning uploads:', e);
+        }
+
+        // 5. Delete from database
+        await Lecture.findByIdAndDelete(req.params.id);
         console.log(`[DB] Lecture deleted: ${req.params.id}`);
+
         res.status(200).json({ message: "Lecture deleted" });
+
     } catch (error) {
         console.error(`[ERROR] Delete lecture failed:`, error);
         res.status(500).json({ error: error.message });
@@ -234,7 +284,7 @@ router.delete("/:id", authenticateToken, authorizeRole(['teacher']), checkLectur
 router.get("/course/:courseId", authenticateToken, authorizeRole(['student', 'teacher']), checkCourseAccess, async (req, res) => {
     try {
         console.log(`[DB] Fetching lectures for course: ${req.params.courseId}`);
-        const lectures = await Lecture.find({courseId: req.params.courseId})
+        const lectures = await Lecture.find({ courseId: req.params.courseId })
             .populate("comments.userId", "username");
         console.log(`[DB] Found ${lectures.length} lectures (including processing status)`);
         res.json(lectures);

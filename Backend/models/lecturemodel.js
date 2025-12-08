@@ -5,10 +5,11 @@ const lectureSchema = new Schema({
   courseId: { type: Schema.Types.ObjectId, ref: 'Course', required: true },
   nameOfTopic: { type: String, required: true },
   videoLink: { type: String },
-  processingStatus: { 
-    type: String, 
-    enum: ['pending', 'processing', 'completed', 'failed'], 
-    default: 'pending' 
+  videoName: { type: String },  // Sanitized folder name for cleanup
+  processingStatus: {
+    type: String,
+    enum: ['pending', 'processing', 'completed', 'failed'],
+    default: 'pending'
   },
   jobId: { type: String },
   processingError: { type: String },

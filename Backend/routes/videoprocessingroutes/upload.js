@@ -7,7 +7,12 @@ const { uploadToMinIO, cleanupLocalFiles } = require('./cloud.js')
 
 // Option 2: Using Bull with Redis (uncomment if you want to use Redis)
 const Queue = require('bull');
-const videoProcessingQueue = new Queue('video processing', process.env.REDIS_URL);
+
+// Use environment-specific queue name to prevent local/prod conflicts
+const environment = process.env.ENVIRONMENT || 'production';
+const queueName = `video-processing-${environment}`;
+const videoProcessingQueue = new Queue(queueName, process.env.REDIS_URL);
+console.log(`[QUEUE] Using queue: ${queueName}`);
 
 const app = express.Router();
 
@@ -17,14 +22,14 @@ const app = express.Router();
 videoProcessingQueue.process('process-video', 1, async (job) => {
   const Lecture = require('../../models/lecturemodel.js');
   const { filePath, videoName, outputDir, resolutions, lectureId } = job.data;
-  
+
   try {
     // Update lecture status to "processing"
     console.log(`[WORKER] Starting processing for lecture ${lectureId}`);
     console.log(`[WORKER] File path: ${filePath}`);
     console.log(`[WORKER] File exists: ${fs.existsSync(filePath)}`);
     console.log(`[WORKER] Output dir: ${outputDir}`);
-    
+
     await Lecture.findByIdAndUpdate(lectureId, {
       processingStatus: 'processing'
     });
@@ -35,7 +40,7 @@ videoProcessingQueue.process('process-video', 1, async (job) => {
     // Upload to MinIO
     const s3FolderPath = `hls-videos/${videoName}`;
     const minioResult = await uploadToMinIO(outputDir, s3FolderPath);
-    
+
     console.log('[COMPLETE] Job finished', minioResult);
     console.log('[CLEANUP] Removing local HLS files...');
     cleanupLocalFiles(outputDir);
@@ -45,19 +50,37 @@ videoProcessingQueue.process('process-video', 1, async (job) => {
       processingStatus: 'completed',
       videoLink: minioResult.masterPlaylistUrl
     });
-    
+
     console.log(`[WORKER] Lecture ${lectureId} processing completed successfully`);
     return minioResult;
 
   } catch (error) {
     console.error(`[WORKER] Processing failed for lecture ${lectureId}:`, error);
-    
+
+    // Cleanup original upload file on failure
+    try {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log(`[CLEANUP] Deleted original file on failure: ${filePath}`);
+      }
+    } catch (cleanupError) {
+      console.error('[CLEANUP ERROR] Failed to delete original file:', cleanupError);
+    }
+
+    // Cleanup partial HLS output if any
+    try {
+      cleanupLocalFiles(outputDir);
+      console.log(`[CLEANUP] Deleted partial HLS output on failure: ${outputDir}`);
+    } catch (cleanupError) {
+      console.error('[CLEANUP ERROR] Failed to delete HLS output:', cleanupError);
+    }
+
     // Update lecture with status "failed" and error message
     await Lecture.findByIdAndUpdate(lectureId, {
       processingStatus: 'failed',
       processingError: error.message
     });
-    
+
     throw error;
   }
 });
@@ -135,12 +158,12 @@ const processVideo = async (filePath, videoName, outputDir, resolutions) => {
 
         process.on('error', (error) => {
           console.error(`[ERROR] ${res} process error:`, error);
-          watcher.close(); // Close file watcher
+          if (watcher) watcher.close(); // Close file watcher if exists
           reject(error);
         });
 
         process.on('exit', (code) => {
-          watcher.close(); // Close file watcher
+          if (watcher) watcher.close(); // Close file watcher
           if (code === 0) {
             console.log(`[SUCCESS] ${res} conversion complete - Created ${segmentCount} segments`);
             resolve();
@@ -194,7 +217,7 @@ const sanitizeFileName = (fileName) => {
 
 // Set up multer for file uploads
 const storageEngine = multer.diskStorage({
-  destination: path.resolve('./public/uploads/'), // Use absolute path
+  destination: path.join(__dirname, '../../public/uploads/'), // Use absolute path consistent across environments
   filename: function (req, file, callback) {
     const sanitizedName = sanitizeFileName(file.originalname);
     console.log('Original filename:', file.originalname);
@@ -225,7 +248,7 @@ const upload = multer({
   storage: storageEngine,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 500 * 1024 * 1024 // 500MB limit
+    fileSize: 150 * 1024 * 1024 // 150MB limit
   }
 });
 
@@ -271,7 +294,7 @@ ${res}/stream_${res}.m3u8`;
 
 app.post('/', upload.single('uploadedFile'), async (req, res) => {
   const Lecture = require('../../models/lecturemodel.js');
-  
+
   try {
     if (!req.file) {
       console.error('[ERROR] No file uploaded');
@@ -279,7 +302,7 @@ app.post('/', upload.single('uploadedFile'), async (req, res) => {
     }
 
     const { courseId, nameOfTopic } = req.body;
-    
+
     if (!courseId || !nameOfTopic) {
       console.error('[ERROR] Missing required fields');
       return res.status(400).json({ error: 'courseId and nameOfTopic are required' });
@@ -299,13 +322,14 @@ app.post('/', upload.single('uploadedFile'), async (req, res) => {
       courseId,
       nameOfTopic,
       processingStatus: 'pending',
-      jobId: jobId
+      jobId: jobId,
+      videoName: videoName  // Save for cleanup purposes
     });
     await lecture.save();
     console.log(`[DB] Lecture created: ${lecture._id}`);
 
     // Use absolute path for output directory
-    const outputDir = path.resolve(`./public/hls/${videoName}`);
+    const outputDir = path.join(__dirname, `../../public/hls/${videoName}`);
     const resolutions = ['240p', '360p', '720p'];
 
     // Add job to queue with lectureId

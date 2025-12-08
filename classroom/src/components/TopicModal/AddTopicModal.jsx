@@ -22,8 +22,21 @@ const AddTopicModal = ({ isOpen, onClose, courseId, onTopicAdded }) => {
 
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
-        setFile(selectedFile);
-        setFileName(selectedFile ? selectedFile.name : '');
+        if (selectedFile) {
+            if (selectedFile.size > 150 * 1024 * 1024) { // 150MB limit
+                setError('File size exceeds the 150MB limit.');
+                setFile(null);
+                setFileName('');
+                e.target.value = null; // Reset input
+                return;
+            }
+            setError('');
+            setFile(selectedFile);
+            setFileName(selectedFile.name);
+        } else {
+            setFile(null);
+            setFileName('');
+        }
     };
 
     const handleSubmit = async (e) => {

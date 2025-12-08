@@ -151,7 +151,50 @@ return {
 };
 */
 
+// Function to delete all objects in a folder from MinIO
+const deleteFromMinIO = async (s3FolderPath) => {
+  try {
+    console.log(`[MINIO DELETE] Starting deletion of folder: ${s3FolderPath}`);
+
+    // List all objects in the folder
+    const listParams = {
+      Bucket: BUCKET_NAME,
+      Prefix: s3FolderPath
+    };
+
+    const listedObjects = await s3.listObjectsV2(listParams).promise();
+
+    if (listedObjects.Contents.length === 0) {
+      console.log('[MINIO DELETE] No objects found to delete');
+      return;
+    }
+
+    // Prepare objects for deletion
+    const deleteParams = {
+      Bucket: BUCKET_NAME,
+      Delete: { Objects: [] }
+    };
+
+    listedObjects.Contents.forEach(({ Key }) => {
+      deleteParams.Delete.Objects.push({ Key });
+    });
+
+    // Delete objects
+    await s3.deleteObjects(deleteParams).promise();
+    console.log(`[MINIO DELETE] Successfully deleted ${listedObjects.Contents.length} objects`);
+
+    // Recursively delete if there are more objects (pagination)
+    if (listedObjects.IsTruncated) {
+      await deleteFromMinIO(s3FolderPath);
+    }
+  } catch (error) {
+    console.error('[MINIO DELETE ERROR]', error);
+    // Don't throw error to allow lecture deletion to proceed even if MinIO deletion fails
+  }
+};
+
 module.exports = {
   uploadToMinIO,
-  cleanupLocalFiles
+  cleanupLocalFiles,
+  deleteFromMinIO
 };
