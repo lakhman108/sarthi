@@ -5,21 +5,15 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const { uploadToMinIO, cleanupLocalFiles } = require('./cloud.js')
 
-// Option 2: Using Bull with Redis (uncomment if you want to use Redis)
-const Queue = require('bull');
-
-// Use environment-specific queue name to prevent local/prod conflicts
-const environment = process.env.ENVIRONMENT || 'production';
-const queueName = `video-processing-${environment}`;
-const videoProcessingQueue = new Queue(queueName, process.env.REDIS_URL);
-console.log(`[QUEUE] Using queue: ${queueName}`);
+// Using BullMQ with Singleton Pattern
+const queueManager = require('../../config/queue');
+const videoProcessingQueue = queueManager.getQueue('video-processing');
 
 const app = express.Router();
 
 
-// Bull Queue Worker with Lecture Status Updates
-// Changed from 2 to 1 concurrent worker to prevent resource contention and alternating failures
-videoProcessingQueue.process('process-video', 1, async (job) => {
+// BullMQ Worker with Lecture Status Updates
+const videoProcessingWorker = queueManager.createWorker('video-processing', async (job) => {
   const Lecture = require('../../models/lecturemodel.js');
   const { filePath, videoName, outputDir, resolutions, lectureId } = job.data;
 
@@ -332,7 +326,7 @@ app.post('/', upload.single('uploadedFile'), async (req, res) => {
     const outputDir = path.join(__dirname, `../../public/hls/${videoName}`);
     const resolutions = ['240p', '360p', '720p'];
 
-    // Add job to queue with lectureId
+    // Add job to BullMQ queue with lectureId
     const job = await videoProcessingQueue.add('process-video', {
       filePath: filePath,
       videoName,
@@ -341,7 +335,7 @@ app.post('/', upload.single('uploadedFile'), async (req, res) => {
       lectureId: lecture._id.toString()
     });
 
-    console.log(`[QUEUE] Job ${job.id} added to queue for lecture ${lecture._id}`);
+    console.log(`[QUEUE] BullMQ Job ${job.id} added to queue for lecture ${lecture._id}`);
 
     // Return immediately with lectureId, jobId, and processingStatus
     res.status(202).json({

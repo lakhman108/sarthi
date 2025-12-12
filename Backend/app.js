@@ -31,7 +31,12 @@ const coreOptions = {
 console.log(coreOptions);
 
 // Trust proxy - required for rate limiting behind reverse proxy (Coolify/nginx)
-app.set('trust proxy', 1);
+// This MUST be set before any rate limiting middleware
+if (process.env.ENVIRONMENT === 'production') {
+  app.set('trust proxy', 1); // Trust first proxy in production
+} else {
+  app.set('trust proxy', false); // Don't trust proxy in development
+}
 
 app.use(cors(coreOptions));
 // Connect to MongoDB
@@ -44,17 +49,25 @@ db.once('open', function() {
   console.log('Connected to MongoDB successfully!');
 });
 
-// Rate Limiter
-
-const limiter = rateLimit({
-	windowMs: 15 * 60 * 10000, // 15 minutes
-	limit: process.env.LIMIT, // Limit each IP to 100 requests per `window` (here, per 15 minutes).
-	standardHeaders: 'draft-8', // draft-6: `RateLimit-*` headers; draft-7 & draft-8: combined `RateLimit` header
-	legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
-})
-
-// Applying the rate limiting middleware to all requests.
-// app.use(limiter)
+// Rate Limiter - Only enable in production
+if (process.env.ENVIRONMENT === 'production') {
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: process.env.LIMIT || 100, // Limit each IP to 100 requests per window
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    message: {
+      error: 'Too many requests from this IP, please try again later.'
+    },
+    // Trust proxy is already set above, no need to set it here again
+  });
+  
+  // Apply rate limiting to all requests in production
+  app.use(limiter);
+  console.log('[RATE LIMIT] Rate limiting enabled for production');
+} else {
+  console.log('[RATE LIMIT] Rate limiting disabled for development');
+}
 
 // Middleware
 app.use(bodyParser.json());
@@ -62,27 +75,26 @@ app.use(bodyParser.json());
 // Swagger Documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
 
-// Bull Board Setup
+// BullMQ Board Setup
 const { createBullBoard } = require('@bull-board/api');
-const { BullAdapter } = require('@bull-board/api/bullAdapter');
+const { BullMQAdapter } = require('@bull-board/api/bullMQAdapter');
 const { ExpressAdapter } = require('@bull-board/express');
-const Queue = require('bull');
+const queueManager = require('./config/queue');
 
-// Create queue instance (same as in upload.js)
-const environment = process.env.ENVIRONMENT || 'production';
-const queueName = `video-processing-${environment}`;
-const videoProcessingQueue = new Queue(queueName, process.env.REDIS_URL);
+// Get queue instance from our singleton
+const videoProcessingQueue = queueManager.getQueue('video-processing');
 
 // Setup Bull Board
 const serverAdapter = new ExpressAdapter();
 serverAdapter.setBasePath('/admin/queues');
 
 createBullBoard({
-  queues: [new BullAdapter(videoProcessingQueue)],
+  queues: [new BullMQAdapter(videoProcessingQueue)],
   serverAdapter: serverAdapter,
 });
 
 app.use('/admin/queues', serverAdapter.getRouter());
+console.log('[QUEUE] Bull Board dashboard available at /admin/queues');
 
 // Routes
 const userRoutes = require('./routes/user');

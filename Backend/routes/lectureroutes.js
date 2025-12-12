@@ -175,10 +175,8 @@ router.get("/:id", authenticateToken, authorizeRole(['student', 'teacher']), che
  *         description: Server error
  */
 router.delete("/:id", authenticateToken, authorizeRole(['teacher']), checkLectureTeacherAccess, async (req, res) => {
-    const Queue = require('bull');
-    const environment = process.env.ENVIRONMENT || 'production';
-    const queueName = `video-processing-${environment}`;
-    const videoProcessingQueue = new Queue(queueName, process.env.REDIS_URL);
+    const queueManager = require('./videoprocessingroutes/../config/queue');
+    const videoProcessingQueue = queueManager.getQueue('video-processing');
 
     try {
         console.log(`[DB] Attempting to delete lecture: ${req.params.id}`);
@@ -192,18 +190,18 @@ router.delete("/:id", authenticateToken, authorizeRole(['teacher']), checkLectur
         const { deleteFromMinIO, cleanupLocalFiles } = require('./videoprocessingroutes/cloud.js');
         const path = require('path');
 
-        // 1. Cancel pending/processing Bull queue job
+        // 1. Cancel pending/processing BullMQ queue job
         if (lecture.processingStatus === 'pending' || lecture.processingStatus === 'processing') {
             try {
                 const jobs = await videoProcessingQueue.getJobs(['waiting', 'active', 'delayed']);
                 for (const job of jobs) {
                     if (job.data && job.data.lectureId === req.params.id) {
                         await job.remove();
-                        console.log(`[QUEUE] Removed job ${job.id} for lecture ${req.params.id}`);
+                        console.log(`[QUEUE] Removed BullMQ job ${job.id} for lecture ${req.params.id}`);
                     }
                 }
             } catch (e) {
-                console.error('[QUEUE] Failed to remove job:', e);
+                console.error('[QUEUE] Failed to remove BullMQ job:', e);
             }
         }
 
