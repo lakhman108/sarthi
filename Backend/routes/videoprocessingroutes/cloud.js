@@ -2,87 +2,125 @@ const AWS = require('aws-sdk');
 const fs = require('fs');
 const path = require('path');
 
-// Configure AWS SDK for MinIO
+// Configure AWS SDK for MinIO with improved settings
 const s3 = new AWS.S3({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  endpoint: process.env.MINIO_BROWSER_REDIRECT_URL,
-  s3ForcePathStyle: true, // Required for MinIO
-  signatureVersion: 'v4'
+  endpoint: process.env.MINIO_ENDPOINT || process.env.MINIO_BROWSER_REDIRECT_URL,
+  s3ForcePathStyle: true,
+  signatureVersion: 'v4',
+  region: 'us-east-1',
+  httpOptions: {
+    timeout: 300000, // 5 minutes timeout
+    connectTimeout: 60000 // 1 minute connection timeout
+  },
+  maxRetries: 3,
+  retryDelayOptions: {
+    base: 2000 // 2 second base delay between retries
+  }
 });
+
+console.log('[MINIO CONFIG] Endpoint:', process.env.MINIO_ENDPOINT || process.env.MINIO_BROWSER_REDIRECT_URL);
+console.log('[MINIO CONFIG] Bucket:', process.env.AWS_S3_BUCKET_NAME);
 
 const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME;
 
-// Function to upload entire HLS folder structure to MinIO
+// Helper function to get all files recursively
+const getAllFiles = (dirPath, arrayOfFiles = []) => {
+  const files = fs.readdirSync(dirPath);
+
+  files.forEach(file => {
+    const fullPath = path.join(dirPath, file);
+    if (fs.statSync(fullPath).isDirectory()) {
+      arrayOfFiles = getAllFiles(fullPath, arrayOfFiles);
+    } else {
+      arrayOfFiles.push(fullPath);
+    }
+  });
+
+  return arrayOfFiles;
+};
+
+// Determine content type based on file extension
+const getContentType = (fileName) => {
+  const ext = path.extname(fileName).toLowerCase();
+  switch (ext) {
+    case '.m3u8': return 'application/vnd.apple.mpegurl';
+    case '.ts': return 'video/mp2t';
+    case '.mp4': return 'video/mp4';
+    default: return 'application/octet-stream';
+  }
+};
+
+// Upload a single file with proper error handling
+const uploadSingleFile = async (filePath, s3Key) => {
+  try {
+    const fileStream = fs.createReadStream(filePath);
+    const contentType = getContentType(filePath);
+
+    const uploadParams = {
+      Bucket: BUCKET_NAME,
+      Key: s3Key,
+      Body: fileStream,
+      ContentType: contentType,
+      CacheControl: contentType === 'application/vnd.apple.mpegurl' ? 'no-cache' : 'max-age=31536000'
+    };
+
+    const data = await s3.upload(uploadParams).promise();
+    return { success: true, key: s3Key, location: data.Location };
+  } catch (error) {
+    console.error(`[MINIO UPLOAD ERROR] Failed to upload ${s3Key}:`, error.message);
+    return { success: false, key: s3Key, error: error.message };
+  }
+};
+
+// Function to upload files in controlled batches
 const uploadToMinIO = async (localFolderPath, s3FolderPath) => {
   try {
     console.log(`[MINIO UPLOAD] Starting upload from ${localFolderPath} to minio://${BUCKET_NAME}/${s3FolderPath}`);
 
-    const uploadPromises = [];
-
-    // Function to recursively get all files in directory
-    const getAllFiles = (dirPath, arrayOfFiles = []) => {
-      const files = fs.readdirSync(dirPath);
-
-      files.forEach(file => {
-        const fullPath = path.join(dirPath, file);
-        if (fs.statSync(fullPath).isDirectory()) {
-          arrayOfFiles = getAllFiles(fullPath, arrayOfFiles);
-        } else {
-          arrayOfFiles.push(fullPath);
-        }
-      });
-
-      return arrayOfFiles;
-    };
-
-    // Get all files in the HLS directory
+    // Get all files to upload
     const allFiles = getAllFiles(localFolderPath);
     console.log(`[MINIO UPLOAD] Found ${allFiles.length} files to upload`);
 
-    // Upload each file
-    for (const filePath of allFiles) {
-      const relativePath = path.relative(localFolderPath, filePath);
-      const s3Key = `${s3FolderPath}/${relativePath}`.replace(/\\/g, '/'); // Handle Windows paths
+    // Upload in batches to avoid overwhelming the server
+    const BATCH_SIZE = 3; // Upload 3 files at a time
+    const DELAY_BETWEEN_BATCHES = 500; // 500ms delay between batches
+    const results = [];
 
-      // Determine content type based on file extension
-      const getContentType = (fileName) => {
-        const ext = path.extname(fileName).toLowerCase();
-        switch (ext) {
-          case '.m3u8': return 'application/vnd.apple.mpegurl';
-          case '.ts': return 'video/mp2t';
-          case '.mp4': return 'video/mp4';
-          default: return 'application/octet-stream';
+    // Process files in batches
+    for (let i = 0; i < allFiles.length; i += BATCH_SIZE) {
+      const batch = allFiles.slice(i, i + BATCH_SIZE);
+      const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+      const totalBatches = Math.ceil(allFiles.length / BATCH_SIZE);
+      
+      console.log(`[MINIO UPLOAD] Processing batch ${batchNumber}/${totalBatches} (${batch.length} files)`);
+
+      // Upload current batch concurrently
+      const batchPromises = batch.map(filePath => {
+        const relativePath = path.relative(localFolderPath, filePath);
+        const s3Key = `${s3FolderPath}/${relativePath}`.replace(/\\/g, '/');
+        return uploadSingleFile(filePath, s3Key);
+      });
+
+      const batchResults = await Promise.all(batchPromises);
+      
+      // Log individual results
+      batchResults.forEach(result => {
+        if (result.success) {
+          console.log(`[MINIO UPLOAD] ✓ Uploaded: ${result.key}`);
+        } else {
+          console.error(`[MINIO UPLOAD] ✗ Failed: ${result.key} - ${result.error}`);
         }
-      };
+      });
 
-      const fileContent = fs.readFileSync(filePath);
-      const contentType = getContentType(filePath);
+      results.push(...batchResults);
 
-      const uploadParams = {
-        Bucket: BUCKET_NAME,
-        Key: s3Key,
-        Body: fileContent,
-        ContentType: contentType,
-        // Set appropriate cache headers for HLS files
-        CacheControl: contentType === 'application/vnd.apple.mpegurl' ? 'no-cache' : 'max-age=31536000'
-      };
-
-      const uploadPromise = s3.upload(uploadParams).promise()
-        .then((data) => {
-          console.log(`[MINIO UPLOAD] Uploaded: ${s3Key}`);
-          return { success: true, key: s3Key, location: data.Location };
-        })
-        .catch((error) => {
-          console.error(`[MINIO UPLOAD ERROR] Failed to upload ${s3Key}:`, error);
-          return { success: false, key: s3Key, error: error.message };
-        });
-
-      uploadPromises.push(uploadPromise);
+      // Add delay between batches (except for the last batch)
+      if (i + BATCH_SIZE < allFiles.length) {
+        await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
+      }
     }
-
-    // Wait for all uploads to complete
-    const results = await Promise.all(uploadPromises);
 
     // Check results
     const successful = results.filter(r => r.success);
@@ -124,32 +162,6 @@ const cleanupLocalFiles = (localFolderPath) => {
     console.error('[CLEANUP ERROR]', error);
   }
 };
-
-// Modified processVideo function - add this at the end before returning
-// Replace the existing return statement in your processVideo function with this:
-
-/*
-// After generating master playlist, upload to MinIO
-console.log('\n[MINIO] Uploading to MinIO...');
-const s3FolderPath = `hls-videos/${videoName}`; // MinIO folder structure
-const minioResult = await uploadToMinIO(outputDir, s3FolderPath);
-
-// Cleanup local files after successful upload
-console.log('[CLEANUP] Removing local HLS files...');
-cleanupLocalFiles(outputDir);
-
-// Cleanup original uploaded file
-if (fs.existsSync(filePath)) {
-  fs.unlinkSync(filePath);
-}
-
-console.log('[COMPLETE] MinIO Master playlist URL:', minioResult.masterPlaylistUrl);
-return {
-  masterUrl: minioResult.masterPlaylistUrl,
-  s3Path: minioResult.s3Path,
-  uploadedFiles: minioResult.uploadedFiles
-};
-*/
 
 // Function to delete all objects in a folder from MinIO
 const deleteFromMinIO = async (s3FolderPath) => {
