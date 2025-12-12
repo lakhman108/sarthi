@@ -209,13 +209,17 @@ const sanitizeFileName = (fileName) => {
     .replace(/^-+|-+$/g, '');
 };
 
+// Environment-aware path management
+const pathManager = require('../../config/paths');
+
 // Set up multer for file uploads
 const storageEngine = multer.diskStorage({
-  destination: path.join(__dirname, '../../public/uploads/'), // Use absolute path consistent across environments
+  destination: pathManager.getUploadsDir(), // Environment-aware path
   filename: function (req, file, callback) {
     const sanitizedName = sanitizeFileName(file.originalname);
     console.log('Original filename:', file.originalname);
     console.log('Sanitized filename:', sanitizedName);
+    console.log('Upload destination:', pathManager.getUploadsDir());
     callback(null, sanitizedName);
   },
 });
@@ -322,9 +326,12 @@ app.post('/', upload.single('uploadedFile'), async (req, res) => {
     await lecture.save();
     console.log(`[DB] Lecture created: ${lecture._id}`);
 
-    // Use absolute path for output directory
-    const outputDir = path.join(__dirname, `../../public/hls/${videoName}`);
+    // Use environment-aware path for output directory
+    const outputDir = pathManager.getVideoHlsDir(videoName);
     const resolutions = ['240p', '360p', '720p'];
+    
+    console.log('[PATHS] Upload destination:', pathManager.getUploadsDir());
+    console.log('[PATHS] HLS output directory:', outputDir);
 
     // Add job to BullMQ queue with lectureId
     const job = await videoProcessingQueue.add('process-video', {
