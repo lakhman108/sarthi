@@ -62,6 +62,28 @@ app.use(bodyParser.json());
 // Swagger Documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
 
+// Bull Board Setup
+const { createBullBoard } = require('@bull-board/api');
+const { BullAdapter } = require('@bull-board/api/bullAdapter');
+const { ExpressAdapter } = require('@bull-board/express');
+const Queue = require('bull');
+
+// Create queue instance (same as in upload.js)
+const environment = process.env.ENVIRONMENT || 'production';
+const queueName = `video-processing-${environment}`;
+const videoProcessingQueue = new Queue(queueName, process.env.REDIS_URL);
+
+// Setup Bull Board
+const serverAdapter = new ExpressAdapter();
+serverAdapter.setBasePath('/admin/queues');
+
+createBullBoard({
+  queues: [new BullAdapter(videoProcessingQueue)],
+  serverAdapter: serverAdapter,
+});
+
+app.use('/admin/queues', serverAdapter.getRouter());
+
 // Routes
 const userRoutes = require('./routes/user');
 const courseRoutes = require('./routes/course');
