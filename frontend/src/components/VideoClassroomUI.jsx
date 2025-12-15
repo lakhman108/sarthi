@@ -138,7 +138,7 @@ const VideoClassroomUI = ({ courseName, classCode }) => {
             for (const lecture of processingLectures) {
                 await refreshLecture(lecture._id);
             }
-        }, 5000); // Poll every 5 seconds
+        }, 10*1000); // Poll every 5 seconds
 
         return () => clearInterval(interval);
     }, [lectures, id]);
