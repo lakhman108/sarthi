@@ -21,25 +21,25 @@ const Header = ({ refresh }) => {
   };
 
   return (
-    <header className="flex justify-between items-center p-4 border-b">
+    <header className="flex justify-between items-center px-6 py-4 border-b border-claude-200 bg-white">
       <div className="flex items-center space-x-4">
-        <h1 className="text-2xl font-bold">Sarthi</h1>
+        <h1 className="text-xl font-semibold text-claude-900">Sarthi</h1>
       </div>
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-2">
         {usercontex.user.role === "teacher" && (
           <button
-            className="p-2 hover:bg-gray-100 rounded-full"
+            className="p-2 hover:bg-claude-100 rounded-lg transition-colors"
             onClick={() => setIsCreateClassModalOpen(true)}
           >
-            <Plus />
+            <Plus size={20} className="text-claude-700" />
           </button>
         )}
         {usercontex.user.role === "student" && (
           <button
-            className="p-2 hover:bg-gray-100 rounded-full"
+            className="p-2 hover:bg-claude-100 rounded-lg transition-colors"
             onClick={() => setIsJoinClassModalOpen(true)}
           >
-            <UserPlus />
+            <UserPlus size={20} className="text-claude-700" />
           </button>
         )}
         <ClassModal
@@ -53,15 +53,13 @@ const Header = ({ refresh }) => {
           onClose={() => setIsJoinClassModalOpen(false)}
           onJoinSuccess={handleJoinSuccess}
         />
-        <button onClick={()=>{navigate('/settings')}}>
+        <button onClick={()=>{navigate('/settings')}} className="ml-2">
         <img
-
-          className="w-8 h-8 rounded-full"
+          className="w-8 h-8 rounded-full ring-2 ring-claude-200"
           src={usercontex.user.profilePictureImageLink}
           alt="User Profile"
         />
         </button>
-
       </div>
     </header>
   );

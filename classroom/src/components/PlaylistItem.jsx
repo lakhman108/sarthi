@@ -127,15 +127,15 @@ const PlaylistItem = ({ lecture, isActive, onClick, onLectureDeleted, onLectureE
 
     return (
         <div
-            className={`flex items-center justify-between space-x-2 p-2 ${
+            className={`flex items-center justify-between space-x-2 p-2.5 rounded-lg text-sm ${
                 isDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
-            } ${isActive ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'}`}
+            } ${isActive ? 'bg-claude-200 text-claude-900' : 'hover:bg-claude-100'}`}
             onClick={isDisabled ? undefined : onClick}
         >
             <div className="flex items-center space-x-2 flex-1 min-w-0">
-                <Play size={16} className={isActive ? 'text-blue-600' : 'text-gray-600'} />
+                <Play size={14} className={isActive ? 'text-claude-900' : 'text-claude-700'} />
                 <div className="flex flex-col flex-1 min-w-0">
-                    <span className={`${isActive ? 'font-bold' : ''} truncate`}>{lecture.nameOfTopic}</span>
+                    <span className={`${isActive ? 'font-semibold' : 'font-medium'} truncate text-claude-900`}>{lecture.nameOfTopic}</span>
                     {getStatusBadge()}
                     {lecture.processingStatus === 'failed' && lecture.processingError && (
                         <span className="text-xs text-red-600 truncate">{lecture.processingError}</span>
@@ -147,26 +147,26 @@ const PlaylistItem = ({ lecture, isActive, onClick, onLectureDeleted, onLectureE
                 <div className="relative">
                     <button
                         onClick={toggleActions}
-                        className="p-1 rounded-full hover:bg-gray-200"
+                        className="p-1 rounded-lg hover:bg-claude-200"
                         aria-label="More options"
                     >
-                        <MoreHorizontal className="text-gray-600" size={20} />
+                        <MoreHorizontal className="text-claude-700" size={18} />
                     </button>
 
                     {state.showActions && (
-                        <div className="absolute right-0 mt-2 w-28 bg-white shadow-md rounded-md z-10">
+                        <div className="absolute right-0 mt-2 w-28 bg-white shadow-lg border border-claude-200 rounded-lg z-10 overflow-hidden">
                             <button
                                 onClick={openEditConfirmation}
-                                className="flex items-center p-2 w-full hover:bg-green-100 text-green-600"
+                                className="flex items-center p-2 w-full hover:bg-claude-100 text-claude-900 text-sm"
                             >
-                                <Edit3 size={16} className="mr-2" />
+                                <Edit3 size={14} className="mr-2" />
                                 Edit
                             </button>
                             <button
                                 onClick={openDeleteConfirmation}
-                                className="flex items-center p-2 w-full hover:bg-red-100 text-red-600"
+                                className="flex items-center p-2 w-full hover:bg-red-50 text-red-600 text-sm"
                             >
-                                <Trash2 size={16} className="mr-2" />
+                                <Trash2 size={14} className="mr-2" />
                                 Delete
                             </button>
                         </div>
@@ -185,7 +185,7 @@ const PlaylistItem = ({ lecture, isActive, onClick, onLectureDeleted, onLectureE
                 onClose={handleEditCancel}
                 onLectureEdited={onLectureEdited}
             />
-            {state.isDeleting && <span>Deleting...</span>}
+            {state.isDeleting && <span className="text-xs text-claude-700">Deleting...</span>}
         </div>
     );
 };

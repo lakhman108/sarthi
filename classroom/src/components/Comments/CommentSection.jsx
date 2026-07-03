@@ -9,26 +9,26 @@ const CommentSection = ({ lectureId }) => {
     const [isVisible, setIsVisible] = useState(false);
 
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+        <div className="bg-white p-5 rounded-lg border border-claude-200">
             <button 
                 onClick={() => setIsVisible(!isVisible)}
-                className="flex items-center justify-between w-full mb-6 group"
+                className="flex items-center justify-between w-full mb-5 group"
             >
-                <div className="flex items-center gap-3">
-                    <MessageCircle className="text-sarthi-purple-600" size={24} />
-                    <h3 className="text-xl font-display font-bold text-gray-900">
+                <div className="flex items-center gap-2">
+                    <MessageCircle className="text-claude-700" size={20} />
+                    <h3 className="text-base font-display font-semibold text-claude-900">
                         Comments {comments.length > 0 && `(${comments.length})`}
                     </h3>
                 </div>
                 {isVisible ? (
-                    <ChevronUp className="text-gray-400 group-hover:text-sarthi-purple-600 transition-colors" size={20} />
+                    <ChevronUp className="text-claude-600 group-hover:text-claude-900 transition-colors" size={18} />
                 ) : (
-                    <ChevronDown className="text-gray-400 group-hover:text-sarthi-purple-600 transition-colors" size={20} />
+                    <ChevronDown className="text-claude-600 group-hover:text-claude-900 transition-colors" size={18} />
                 )}
             </button>
 
             {isVisible && (
-                <div className="mb-6 animate-slide-up">
+                <div className="mb-5 animate-slide-up">
                     <CommentList comments={comments} />
                 </div>
             )}

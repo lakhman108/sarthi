@@ -4,19 +4,19 @@ import { formatDate } from '../../utils/commentService';
 const CommentItem = ({ comment }) => {
 
     return (
-  <div className="mb-6 pb-6 border-b border-gray-100 last:border-0">
-    <div className="flex items-center gap-3 mb-3">
+  <div className="mb-5 pb-5 border-b border-claude-100 last:border-0">
+    <div className="flex items-center gap-2.5 mb-2.5">
       <img 
         src={comment.userId.profilePictureImageLink} 
         alt={comment.userId.username} 
-        className="w-10 h-10 rounded-full ring-2 ring-sarthi-purple-100" 
+        className="w-8 h-8 rounded-full ring-2 ring-claude-200" 
       />
       <div>
-        <span className="font-display font-bold text-gray-900 block">{comment.userId.username}</span>
-        <span className="text-xs text-gray-500 font-body">{ formatDate(comment.createdAt)}</span>
+        <span className="font-display font-semibold text-claude-900 block text-sm">{comment.userId.username}</span>
+        <span className="text-xs text-claude-600 font-body">{ formatDate(comment.createdAt)}</span>
       </div>
     </div>
-    <p className="text-gray-700 font-body leading-relaxed ml-13">{comment.text}</p>
+    <p className="text-claude-800 font-body leading-relaxed ml-10.5 text-sm">{comment.text}</p>
   </div>
 )};
 

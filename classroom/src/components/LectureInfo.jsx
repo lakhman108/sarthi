@@ -6,19 +6,19 @@ const LectureInfo = ({ lecture, onLike }) => {
 
     }, [lecture]);
  return(
-  <div className="bg-white p-6 rounded-2xl mb-6 shadow-lg border border-gray-100">
-    <h2 className="text-2xl font-display font-bold mb-4 text-gray-900">{lecture.nameOfTopic}</h2>
-    <div className="flex items-center gap-6 text-sm text-gray-600">
-      <div className="flex items-center gap-2">
-        <Eye size={18} className="text-gray-400" />
-        <span className="font-body font-medium">{lecture.noOfViews} views</span>
+  <div className="bg-white p-5 rounded-lg border border-claude-200">
+    <h2 className="text-lg font-display font-semibold mb-3 text-claude-900">{lecture.nameOfTopic}</h2>
+    <div className="flex items-center gap-5 text-sm text-claude-700">
+      <div className="flex items-center gap-1.5">
+        <Eye size={16} className="text-claude-600" />
+        <span className="font-body">{lecture.noOfViews} views</span>
       </div>
       <button 
         onClick={onLike} 
-        className="flex items-center gap-2 hover:text-sarthi-purple-600 transition-colors group"
+        className="flex items-center gap-1.5 hover:text-claude-900 transition-colors group"
       >
-        <ThumbsUp size={18} className="text-gray-400 group-hover:text-sarthi-purple-600 transition-colors" />
-        <span className="font-body font-medium">{lecture.noOfLikes} likes</span>
+        <ThumbsUp size={16} className="text-claude-600 group-hover:text-claude-900 transition-colors" />
+        <span className="font-body">{lecture.noOfLikes} likes</span>
       </button>
     </div>
   </div>

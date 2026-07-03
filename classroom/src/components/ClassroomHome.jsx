@@ -62,11 +62,11 @@ const ClassroomUI = () => {
     };
 
     return (
-        <div className="flex bg-gradient-to-br from-gray-50 via-white to-sarthi-purple-50 min-h-screen">
+        <div className="flex bg-claude-50 min-h-screen">
             <Sidebar />
             <div className="flex-1">
                 <Header refresh={refetch} />
-                <main className="p-8">
+                <main className="p-6 md:p-10 max-w-7xl mx-auto">
                     {loading ? (
                         <Loader />
                     ) : (
@@ -74,14 +74,14 @@ const ClassroomUI = () => {
                             {courses.length > 0 ? (
                                 <>
                                     <div className="mb-8">
-                                        <h2 className="text-3xl font-display font-bold text-gray-900 mb-2">
+                                        <h2 className="text-2xl md:text-3xl font-display font-semibold text-claude-900 mb-1">
                                             Your Classrooms
                                         </h2>
-                                        <p className="text-gray-600 font-body">
-                                            {courses.length} {courses.length === 1 ? 'course' : 'courses'} available
+                                        <p className="text-claude-700 font-body text-sm">
+                                            {courses.length} {courses.length === 1 ? 'course' : 'courses'}
                                         </p>
                                     </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                         {courses.map((course, index) => (
                                             <ClassCard
                                                 role={user.role}
@@ -100,13 +100,13 @@ const ClassroomUI = () => {
                                 </>
                             ) : (
                                 <div className="flex flex-col items-center justify-center py-20">
-                                    <div className="w-24 h-24 bg-sarthi-purple-100 rounded-full flex items-center justify-center mb-6">
-                                        <BookOpen size={48} className="text-sarthi-purple-600" />
+                                    <div className="w-16 h-16 bg-claude-200 rounded-2xl flex items-center justify-center mb-4">
+                                        <BookOpen size={32} className="text-claude-700" />
                                     </div>
-                                    <h3 className="text-2xl font-display font-bold text-gray-900 mb-2">
+                                    <h3 className="text-xl font-display font-semibold text-claude-900 mb-2">
                                         No classrooms yet
                                     </h3>
-                                    <p className="text-gray-600 font-body text-center max-w-md">
+                                    <p className="text-claude-700 font-body text-center max-w-md text-sm">
                                         {user.role === 'teacher' 
                                             ? 'Create your first classroom to start teaching'
                                             : 'Join a classroom using an invite code to get started'}

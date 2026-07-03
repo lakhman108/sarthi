@@ -161,24 +161,23 @@ const VideoClassroomUI = ({ courseName, classCode }) => {
         return (<Loader />);
     }
     return (
-        <div className="flex bg-gray-50 min-h-screen w-full">
+        <div className="flex bg-claude-50 min-h-screen w-full">
             <ToastContainer />
             <div className="flex-1 flex flex-col overflow-hidden">
                 <Header courseTitle={courseName} />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6">
-                    <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
+                    <div className="max-w-6xl mx-auto space-y-4">
                         {/* Course Header */}
-                        <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6">
+                        <div className="bg-white rounded-lg border border-claude-200 p-4 sm:p-5">
                             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                                <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">{courseName}</h1>
+                                <h1 className="text-xl sm:text-2xl font-semibold text-claude-900">{courseName}</h1>
                                 {usercontex.user.role === "teacher" && (
                                     <button
                                         onClick={() => setShowShare(!showShare)}
-                                        className="w-full sm:w-auto inline-flex items-center justify-center px-4 sm:px-6 py-2 sm:py-2.5
-                                                 bg-gradient-to-r from-blue-500 to-blue-600
-                                                 hover:from-blue-600 hover:to-blue-700
-                                                 text-white text-sm sm:text-base font-medium rounded-lg sm:rounded-xl
-                                                 shadow-md hover:shadow-lg transition-all duration-200"
+                                        className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2
+                                                 bg-claude-900 hover:bg-claude-800
+                                                 text-white text-sm font-medium rounded-lg
+                                                 transition-colors duration-200"
                                     >
                                         {showShare ? 'Hide Share' : 'Share Classroom'}
                                     </button>
@@ -187,21 +186,21 @@ const VideoClassroomUI = ({ courseName, classCode }) => {
                         </div>
 
                         {/* Main Content Container */}
-                        <div className="flex flex-col gap-4 sm:gap-6">
+                        <div className="flex flex-col gap-4">
                             {/* Mobile Share Section */}
                             {showShare && (
-                                <div className="block lg:hidden bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6">
-                                    <h3 className="font-bold text-gray-800 mb-4">Share Classroom</h3>
+                                <div className="block lg:hidden bg-white rounded-lg border border-claude-200 p-4 sm:p-5">
+                                    <h3 className="font-semibold text-claude-900 mb-4 text-sm">Share Classroom</h3>
                                     <ShareClassroom inviteCode={classCode} />
                                 </div>
                             )}
 
                             {/* Video and Playlist Container */}
-                            <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
+                            <div className="flex flex-col lg:flex-row gap-4">
                                 {/* Video Player Section */}
                                 <div className="w-full lg:w-3/4">
                                     {currentLecture && (
-                                        <div className="space-y-4 sm:space-y-6">
+                                        <div className="space-y-4">
                                             <VideoPlayer 
                                                 videoLink={currentLecture.videoLink}
                                                 lectureId={currentLecture._id}
@@ -214,15 +213,15 @@ const VideoClassroomUI = ({ courseName, classCode }) => {
                                 </div>
 
                                 {/* Playlist/Share Sidebar */}
-                                <aside className="w-full lg:w-80 bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden">
+                                <aside className="w-full lg:w-80 bg-white rounded-lg border border-claude-200 overflow-hidden">
                                     {(showShare && window.innerWidth >= 1024) ? (
-                                        <div className="p-4 sm:p-6">
-                                            <h3 className="font-bold text-gray-800 mb-4">Share Classroom</h3>
+                                        <div className="p-4 sm:p-5">
+                                            <h3 className="font-semibold text-claude-900 mb-4 text-sm">Share Classroom</h3>
                                             <ShareClassroom inviteCode={classCode} />
                                         </div>
                                     ) : (
                                         <>
-                                            <h3 className="font-bold p-4 bg-gray-50 text-gray-800">Course Playlist</h3>
+                                            <h3 className="font-semibold p-4 bg-claude-50 text-claude-900 text-sm border-b border-claude-200">Course Playlist</h3>
                                             <div className="overflow-y-auto max-h-[60vh] lg:max-h-[calc(100vh-20rem)] p-2">
                                                 {lectures.map((lecture, index) => (
                                                     <PlaylistItem
@@ -240,11 +239,10 @@ const VideoClassroomUI = ({ courseName, classCode }) => {
                                                 {usercontex.user.role === "teacher" && (
                                                     <button
                                                         onClick={() => setIsModalOpen(true)}
-                                                        className="mt-4 w-full bg-gradient-to-r from-green-500 to-green-600
-                                                                 hover:from-green-600 hover:to-green-700
-                                                                 text-white p-2 sm:p-3 rounded-lg sm:rounded-xl
-                                                                 text-sm sm:text-base font-medium
-                                                                 shadow-md hover:shadow-lg transition-all duration-200"
+                                                        className="mt-4 w-full bg-claude-900 hover:bg-claude-800
+                                                                 text-white p-2.5 rounded-lg
+                                                                 text-sm font-medium
+                                                                 transition-colors duration-200"
                                                     >
                                                         Add New Topic
                                                     </button>
@@ -256,7 +254,6 @@ const VideoClassroomUI = ({ courseName, classCode }) => {
                             </div>
 
                             {/* Notes Section */}
-
                             <CourseNotes courseId={id} />
                         </div>
                     </div>
