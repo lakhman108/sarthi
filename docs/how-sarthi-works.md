@@ -39,6 +39,10 @@ A signed-in user is someone whose browser holds a cookie named `token`. That coo
 
 Roles are `teacher` and `student`. Both can create a class in the current API. Only the teacher who owns a class can rename it, delete it, or change its lectures.
 
+## Sample accounts
+
+`npm run seed` in `Backend/` writes local demo data. The script is `Backend/seed.js`. It creates verified users, so you can sign in without the email code. Logins and class codes are listed in the README. It only touches `teacher@sarthi.local`, `student@sarthi.local`, and the classes `SEED01` and `SEED02`. It exits immediately when `ENVIRONMENT` is `production`.
+
 ## Accounts
 
 Signup is `POST /api/users/register`. The handler in `Backend/controllers/authController.js` does four things:

@@ -91,18 +91,37 @@ Create React App opens http://localhost:3000. If you change `classroom/.env` lat
 
 The API only accepts browser calls from origins listed in `FRONTEND_HOST`. For this setup that value is `http://localhost:3000`.
 
-## 5. Try it in the browser
+## 5. Load the sample accounts
 
-1. Open http://localhost:3000. You land on the login page.
-2. Choose **Sign up**. Pick the **teacher** role for the first account.
-3. Submit the form. Sarthi emails a 6-digit code (OTP). The code lasts 15 minutes.
-4. Enter the code on the verify page. After that, the site sends you to the classroom home.
-5. Create a class. Sarthi makes a 6-character class code.
-6. Sign up a second account with the **student** role, in a private window or another browser.
-7. Join the class with that code.
-8. As the teacher, open the class and add a lecture. Uploading a video needs the extra setup in the next section.
+From `Backend/`, with MongoDB already running:
 
-Signup calls your email provider. Fill in `EMAIL_SERVICE`, `EMAIL_USER`, and `EMAIL_PASSWORD` in `Backend/.env` before you sign up. For Gmail, `EMAIL_SERVICE` is `gmail`, and `EMAIL_PASSWORD` is a Google App Password, not your normal Gmail password.
+```bash
+npm run seed
+```
+
+This creates two verified users and two classes. No email setup is required. Sign in at http://localhost:3000/login.
+
+| Role | Email | Password | What you see |
+| --- | --- | --- | --- |
+| Teacher | `teacher@sarthi.local` | `teacher123` | Both classes below |
+| Student | `student@sarthi.local` | `student123` | Introduction to Programming only |
+
+| Class code | Class | Who is in it |
+| --- | --- | --- |
+| `SEED01` | Introduction to Programming | Teacher and student. Two lectures, comments, and notes. |
+| `SEED02` | Data Structures | Teacher only. Use this to try joining as the student. |
+
+The lecture player uses a public sample stream, so playback needs an internet connection. Running `npm run seed` again resets these two classes, including the lectures, notes, and the student's place in Data Structures. It leaves every other user and class alone. The script refuses to run when `ENVIRONMENT` is `production`.
+
+## 6. Try it in the browser
+
+1. Open http://localhost:3000 and sign in as the teacher.
+2. Open **Introduction to Programming**. You should see two lectures, comments, and a note.
+3. Sign out, then sign in as the student in the same browser, or use a private window so both sessions stay open.
+4. The student home lists only **Introduction to Programming**. Open it and read the note.
+5. As the student, join **Data Structures** with the class code `SEED02`.
+
+To create your own account, use **Sign up** and pick a role. Signup emails a 6-digit code that lasts 15 minutes. Fill in `EMAIL_SERVICE`, `EMAIL_USER`, and `EMAIL_PASSWORD` in `Backend/.env` first. For Gmail, `EMAIL_SERVICE` is `gmail`, and `EMAIL_PASSWORD` is a Google App Password, not your normal Gmail password.
 
 If email is not set up yet, registration still saves the user, then the API returns an error because the mail send failed. You can read the code from your local database and verify by hand:
 
